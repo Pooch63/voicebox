@@ -1,0 +1,55 @@
+'use client';
+
+import { useState } from 'react';
+import { useAppStore } from '@/store/appStore';
+import { useAudioOutput } from '@/hooks/useAudioOutput';
+import { Send } from 'lucide-react';
+
+export const TypeResponse = () => {
+  const { appState, sessionPreferences, transcript, addConversationTurn } = useAppStore();
+  const { speak } = useAudioOutput();
+  const [text, setText] = useState('');
+
+  if (!sessionPreferences || sessionPreferences.inputMode !== 'type') {
+    return null;
+  }
+
+  if (!transcript.question) {
+    return null;
+  }
+
+  const isDisabled = appState === 'listening' || appState === 'processing' || appState === 'speaking';
+  const lang = sessionPreferences.language;
+
+  const handleSubmit = () => {
+    const trimmed = text.trim();
+    if (!trimmed || isDisabled) return;
+    addConversationTurn('user', trimmed);
+    speak(trimmed, lang);
+    setText('');
+  };
+
+  return (
+    <div className="w-full max-w-2xl mt-8 space-y-4">
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        disabled={isDisabled}
+        lang={lang}
+        inputMode="text"
+        placeholder="Type your answer..."
+        rows={3}
+        className="w-full p-5 text-2xl rounded-2xl bg-[var(--surface)] text-[var(--foreground)] placeholder:opacity-40 resize-none focus:outline-none focus:ring-2 focus:ring-[var(--primary)] disabled:opacity-50"
+      />
+      <button
+        type="button"
+        onClick={handleSubmit}
+        disabled={isDisabled || !text.trim()}
+        className="w-full flex items-center justify-center gap-3 py-5 text-xl font-bold rounded-2xl bg-[var(--primary)] text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[var(--primary)]/90 transition-colors"
+      >
+        <Send size={24} />
+        Speak answer
+      </button>
+    </div>
+  );
+};
