@@ -26,10 +26,10 @@ export const ListeningIndicator = ({ isActive = false, onStart }: ListeningIndic
 
   const micButton = (
     <div className={`w-20 h-20 rounded-full flex items-center justify-center transition-colors duration-300 ${
-      isListening ? 'bg-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/50' :
+      isListening ? 'bg-primary-gradient text-white shadow-lg shadow-[var(--primary)]/50' :
       isProcessing ? 'bg-yellow-500 text-white animate-pulse' :
       isActive ? 'bg-[var(--surface)] text-[var(--foreground)]' :
-      'bg-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/30 hover:scale-105'
+      'bg-primary-gradient text-white shadow-lg shadow-[var(--primary)]/30 hover:scale-105'
     }`}>
       <Mic size={36} />
     </div>

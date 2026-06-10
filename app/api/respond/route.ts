@@ -51,10 +51,10 @@ function resolvePreferences(body: RespondRequestBody): SessionPreferences {
 function defaultResponses(prefs: SessionPreferences) {
   const isEnglish = prefs.language === 'en';
   return [
-    { label: isEnglish ? 'Yes' : 'Sí', spoken: isEnglish ? 'Yes.' : 'Sí.', emoji: '✅' },
-    { label: isEnglish ? 'No' : 'No', spoken: isEnglish ? 'No.' : 'No.', emoji: '❌' },
-    { label: isEnglish ? 'Help' : 'Ayuda', spoken: isEnglish ? 'I need some help please.' : 'Necesito ayuda, por favor.', emoji: '🙋' },
-    { label: isEnglish ? 'Say again' : 'Otra vez', spoken: isEnglish ? 'Could you say that again?' : '¿Podría repetir eso?', emoji: '🔄' },
+    { label: isEnglish ? 'Yes' : 'Sí', spoken: isEnglish ? 'Yes.' : 'Sí.', emoji: '✅', iconKeyword: 'check' },
+    { label: isEnglish ? 'No' : 'No', spoken: isEnglish ? 'No.' : 'No.', emoji: '❌', iconKeyword: 'cross' },
+    { label: isEnglish ? 'Help' : 'Ayuda', spoken: isEnglish ? 'I need some help please.' : 'Necesito ayuda, por favor.', emoji: '🙋', iconKeyword: 'help' },
+    { label: isEnglish ? 'Say again' : 'Otra vez', spoken: isEnglish ? 'Could you say that again?' : '¿Podría repetir eso?', emoji: '🔄', iconKeyword: 'repeat' },
   ];
 }
 

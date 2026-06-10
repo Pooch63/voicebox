@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0F1B2D;
-  --foreground: #F0F4F8;
-  --surface: #1A2E45;
-  --primary: #00C9A7;
+  --background: #ffffff;
+  --foreground: #000000;
+  --surface: #f3f4f6; /* gray-100 */
+  --primary: #10b981; /* emerald-500 */
 }
 
 @theme inline {
@@ -15,8 +15,36 @@
   --font-sans: var(--font-atkinson), Arial, Helvetica, sans-serif;
 }
 
+.bg-primary-gradient {
+  background: linear-gradient(135deg, #34d399 0%, #059669 100%);
+}
+
+.text-primary-gradient {
+  background: linear-gradient(135deg, #34d399 0%, #059669 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 20px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }

@@ -7,6 +7,7 @@ export interface ResponseOption {
   label: string;
   spoken: string;
   emoji: string;
+  iconKeyword: string;
 }
 
 export interface ConversationTurn {
@@ -17,6 +18,10 @@ export interface ConversationTurn {
 export interface AppStoreState {
   appState: AppState;
   sessionStarted: boolean;
+  /** Mic was started for this session; used to auto-resume after user answers. */
+  micSessionActive: boolean;
+  /** Question posed — suppress caregiver speech detection until user answers. */
+  awaitingUserResponse: boolean;
   sessionPreferences: SessionPreferences | null;
   conversationHistory: ConversationTurn[];
   transcript: {
@@ -35,6 +40,8 @@ export interface AppStoreState {
   // Actions
   startSession: (prefs: SessionPreferences) => void;
   endSession: () => void;
+  setMicSessionActive: (active: boolean) => void;
+  setAwaitingUserResponse: (awaiting: boolean) => void;
   setAppState: (state: AppState) => void;
   setLiveTranscript: (text: string) => void;
   setFinalTranscript: (text: string) => void;
@@ -49,6 +56,8 @@ export interface AppStoreState {
 export const useAppStore = create<AppStoreState>((set) => ({
   appState: 'idle',
   sessionStarted: false,
+  micSessionActive: false,
+  awaitingUserResponse: false,
   sessionPreferences: null,
   conversationHistory: [],
   transcript: {
@@ -67,6 +76,8 @@ export const useAppStore = create<AppStoreState>((set) => ({
   startSession: (prefs) =>
     set({
       sessionStarted: true,
+      micSessionActive: false,
+      awaitingUserResponse: false,
       sessionPreferences: prefs,
       appState: 'idle',
       conversationHistory: [],
@@ -77,6 +88,8 @@ export const useAppStore = create<AppStoreState>((set) => ({
   endSession: () =>
     set({
       sessionStarted: false,
+      micSessionActive: false,
+      awaitingUserResponse: false,
       sessionPreferences: null,
       appState: 'idle',
       conversationHistory: [],
@@ -84,6 +97,8 @@ export const useAppStore = create<AppStoreState>((set) => ({
       responseOptions: [],
       errorMsg: null,
     }),
+  setMicSessionActive: (active) => set({ micSessionActive: active }),
+  setAwaitingUserResponse: (awaiting) => set({ awaitingUserResponse: awaiting }),
   setAppState: (state) => set({ appState: state }),
   setLiveTranscript: (text) =>
     set((state) => ({ transcript: { ...state.transcript, live: text } })),
@@ -99,6 +114,7 @@ export const useAppStore = create<AppStoreState>((set) => ({
     })),
   setQuestion: (question, questionOriginal) =>
     set((state) => ({
+      awaitingUserResponse: true,
       transcript: {
         ...state.transcript,
         question,

@@ -41,7 +41,7 @@ export default function PermissionScreen() {
 
       <button 
         onClick={requestPermission}
-        className="px-8 py-4 bg-[var(--primary)] text-[var(--background)] text-2xl font-bold rounded-2xl hover:scale-105 transition-transform shadow-lg shadow-[var(--primary)]/20"
+        className="px-8 py-4 bg-primary-gradient text-white text-2xl font-bold rounded-2xl hover:scale-105 transition-transform shadow-lg shadow-[var(--primary)]/20"
       >
         Allow Microphone
       </button>

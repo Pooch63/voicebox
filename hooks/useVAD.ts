@@ -4,12 +4,23 @@ import { useAppStore } from '@/store/appStore';
 import { useDeepgram } from './useDeepgram';
 import { useResponseEngine } from './useResponseEngine';
 
+function shouldSuppressCaregiverVad(): boolean {
+  const { appState, awaitingUserResponse } = useAppStore.getState();
+  return (
+    awaitingUserResponse ||
+    appState === 'processing' ||
+    appState === 'speaking'
+  );
+}
+
 export const useVAD = () => {
+  const micSessionActive = useAppStore((state) => state.micSessionActive);
+  const appState = useAppStore((state) => state.appState);
+  const awaitingUserResponse = useAppStore((state) => state.awaitingUserResponse);
   const {
     setAppState,
     setConnectionHealth,
     setFinalTranscript,
-    setLiveTranscript,
     clearDisplayTranscript,
     addConversationTurn,
     setResponseOptions,
@@ -29,6 +40,10 @@ export const useVAD = () => {
       sendAudioFrame(frame);
     },
     onSpeechStart: () => {
+      if (shouldSuppressCaregiverVad()) {
+        console.log('[VoiceBox] Speech ignored — awaiting user response or busy');
+        return;
+      }
       console.log('[VoiceBox] Speech started');
       clearDisplayTranscript();
       setResponseOptions([]);
@@ -60,15 +75,30 @@ export const useVAD = () => {
     },
   });
 
-  // Track mic health
+  const { pause: pauseVad, start: startVad, loading: vadLoading, errored: vadErrored } = vad;
+
+  // Pause while a question is posed or the user is answering; resume for next caregiver turn
+  useEffect(() => {
+    if (!micSessionActive || vadLoading || vadErrored) return;
+
+    const suppress = shouldSuppressCaregiverVad();
+    if (suppress) {
+      void pauseVad();
+    } else {
+      void startVad();
+    }
+  }, [micSessionActive, appState, awaitingUserResponse, vadLoading, vadErrored, pauseVad, startVad]);
+
+  // Track mic health - only mark as errored when VAD actually fails
   useEffect(() => {
     if (vad.errored) {
       setConnectionHealth({ mic: false });
       setAppState('error');
-    } else {
+    } else if (micSessionActive && !vad.loading) {
+      // Only set to true once we've successfully started
       setConnectionHealth({ mic: true });
     }
-  }, [vad.errored, setConnectionHealth, setAppState]);
+  }, [vad.errored, vad.loading, micSessionActive, setConnectionHealth, setAppState]);
 
   return vad;
 };

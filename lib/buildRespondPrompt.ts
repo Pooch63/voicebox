@@ -81,7 +81,10 @@ Do not return markdown formatting, only the raw JSON.`;
     );
   }
 
-  buttonRules.push('The spoken text must sound natural when read aloud in the user\'s language.');
+  buttonRules.push(
+    'The spoken text must sound natural when read aloud in the user\'s language.',
+    'Also provide a ONE WORD DESCRIPTION in English to be used to look up an icon in the icon library. This should be a simple noun or verb representing the option visually.'
+  );
 
   return `You are the core intelligence for VoiceBack, a communication aid for stroke survivors with expressive aphasia.
 A caregiver has just spoken to the user. Use the full conversation for context when choosing response buttons. The latest caregiver message is the new question to address.
@@ -101,7 +104,8 @@ Return only valid JSON matching this schema:
     {
       "label": "Button label (empty string if images only)",
       "spoken": "The full sentence TTS will read aloud",
-      "emoji": "Relevant single emoji (empty string if text only)"
+      "emoji": "Relevant single emoji (empty string if text only)",
+      "iconKeyword": "ONE WORD DESCRIPTION in English to look up an icon"
     }
   ]
 }

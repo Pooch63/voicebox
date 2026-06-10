@@ -18,12 +18,19 @@ function pickVoice(lang: string): SpeechSynthesisVoice | undefined {
 
 export const useAudioOutput = () => {
   const setAppState = useAppStore((state) => state.setAppState);
+  const setAwaitingUserResponse = useAppStore((state) => state.setAwaitingUserResponse);
   const sessionLanguage = useAppStore((state) => state.sessionPreferences?.language ?? 'en');
+
+  const resumeCaregiverListening = useCallback(() => {
+    setAwaitingUserResponse(false);
+    setAppState('idle');
+  }, [setAwaitingUserResponse, setAppState]);
 
   const speak = useCallback(
     (text: string, lang?: string) => {
       if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
         console.warn('Speech synthesis not supported');
+        resumeCaregiverListening();
         return;
       }
 
@@ -43,16 +50,16 @@ export const useAudioOutput = () => {
       };
 
       utterance.onend = () => {
-        setAppState('idle');
+        resumeCaregiverListening();
       };
 
       utterance.onerror = () => {
-        setAppState('idle');
+        resumeCaregiverListening();
       };
 
       window.speechSynthesis.speak(utterance);
     },
-    [setAppState, sessionLanguage],
+    [setAppState, sessionLanguage, resumeCaregiverListening],
   );
 
   const cancel = useCallback(() => {
