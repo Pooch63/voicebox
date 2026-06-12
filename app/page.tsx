@@ -28,9 +28,7 @@ export default function Dashboard() {
     }
   }, []);
 
-  // Heartbeat system - alternates between hunger check and therapy prompts
-  // Default: every 2 minutes for demo purposes (adjust as needed)
-  useHeartbeat({
+  const { triggerManualPrompt } = useHeartbeat({
     enabled: heartbeatEnabled,
     intervalMinutes: 2, // Change this to desired interval (e.g., 60 for hourly)
     onPrompt: (prompt) => {
@@ -128,35 +126,46 @@ export default function Dashboard() {
       {/* Main Content - mobile optimized grid */}
       <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full px-4 sm:px-6 space-y-4 sm:space-y-6">
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mt-2 sm:mt-4">
-          {/* AI Conversation Card */}
-          <Link href="/conversation" className="group relative overflow-hidden bg-[var(--surface)] rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-md border border-[var(--border)]/50 active:shadow-lg hover:shadow-xl active:border-[var(--primary)]/50 hover:border-[var(--primary)]/50 transition-all duration-200 active:scale-[0.98] touch-manipulation">
-            <div className="absolute inset-0 bg-primary-gradient opacity-0 group-hover:opacity-5 group-active:opacity-5 transition-opacity duration-300"></div>
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-blue-500/10 flex items-center justify-center mb-4 sm:mb-6 text-blue-400 group-hover:scale-110 group-active:scale-110 transition-transform duration-300">
+        <div className="flex flex-col mt-2 sm:mt-4">
+          {/* AI Conversation Row */}
+          <Link href="/conversation" className="group relative flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 p-4 sm:p-6 hover:bg-[var(--foreground)]/5 rounded-2xl transition-colors duration-200 active:bg-[var(--foreground)]/10 touch-manipulation">
+            <div className="shrink-0 w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-500 group-hover:scale-105 transition-transform duration-300">
               <MessageSquare size={28} className="sm:w-8 sm:h-8" />
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-[var(--foreground)] mb-1.5 sm:mb-2">AI Assistant</h2>
-            <p className="text-[var(--foreground)] opacity-60 text-base sm:text-lg leading-snug">Practice conversation or ask for help with your daily tasks.</p>
+            <div className="flex-1">
+              <h2 className="text-xl sm:text-2xl font-bold text-[var(--foreground)] mb-1 sm:mb-2">AI Assistant</h2>
+              <p className="text-[var(--foreground)] opacity-60 text-base sm:text-lg leading-snug">Practice conversation or ask for help with your daily tasks.</p>
+            </div>
           </Link>
 
-          {/* Therapy Practice Card */}
-          <Link href="/therapy" className="group relative overflow-hidden bg-[var(--surface)] rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-md border border-[var(--border)]/50 active:shadow-lg hover:shadow-xl active:border-green-500/50 hover:border-green-500/50 transition-all duration-200 active:scale-[0.98] touch-manipulation">
-            <div className="absolute inset-0 bg-gradient-to-br from-green-500/0 to-green-500/5 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300"></div>
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-green-500/10 flex items-center justify-center mb-4 sm:mb-6 text-green-400 group-hover:scale-110 group-active:scale-110 transition-transform duration-300">
+          <div className="px-4 sm:px-6 py-2">
+            <hr className="border-[var(--border)]/50" />
+          </div>
+
+          {/* Therapy Practice Row */}
+          <Link href="/therapy" className="group relative flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 p-4 sm:p-6 hover:bg-[var(--foreground)]/5 rounded-2xl transition-colors duration-200 active:bg-[var(--foreground)]/10 touch-manipulation">
+            <div className="shrink-0 w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-green-500/10 flex items-center justify-center text-green-500 group-hover:scale-105 transition-transform duration-300">
               <HeartPulse size={28} className="sm:w-8 sm:h-8" />
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-[var(--foreground)] mb-1.5 sm:mb-2">Therapy Practice</h2>
-            <p className="text-[var(--foreground)] opacity-60 text-base sm:text-lg leading-snug">Continue your speech exercises to improve your communication.</p>
+            <div className="flex-1">
+              <h2 className="text-xl sm:text-2xl font-bold text-[var(--foreground)] mb-1 sm:mb-2">Therapy Practice</h2>
+              <p className="text-[var(--foreground)] opacity-60 text-base sm:text-lg leading-snug">Continue your speech exercises to improve your communication.</p>
+            </div>
           </Link>
 
-          {/* Caregiver View Card */}
-          <Link href="/caregiver" className="group relative overflow-hidden bg-[var(--surface)] rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-md border border-[var(--border)]/50 active:shadow-lg hover:shadow-xl active:border-purple-500/50 hover:border-purple-500/50 transition-all duration-200 active:scale-[0.98] touch-manipulation">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/0 to-purple-500/5 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300"></div>
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-purple-500/10 flex items-center justify-center mb-4 sm:mb-6 text-purple-400 group-hover:scale-110 group-active:scale-110 transition-transform duration-300">
+          <div className="px-4 sm:px-6 py-2">
+            <hr className="border-[var(--border)]/50" />
+          </div>
+
+          {/* Caregiver View Row */}
+          <Link href="/caregiver" className="group relative flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 p-4 sm:p-6 hover:bg-[var(--foreground)]/5 rounded-2xl transition-colors duration-200 active:bg-[var(--foreground)]/10 touch-manipulation">
+            <div className="shrink-0 w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-500 group-hover:scale-105 transition-transform duration-300">
               <BellRing size={28} className="sm:w-8 sm:h-8" />
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-[var(--foreground)] mb-1.5 sm:mb-2">Caregiver Dashboard</h2>
-            <p className="text-[var(--foreground)] opacity-60 text-base sm:text-lg leading-snug">View and manage patient requests and notifications.</p>
+            <div className="flex-1">
+              <h2 className="text-xl sm:text-2xl font-bold text-[var(--foreground)] mb-1 sm:mb-2">Caregiver Dashboard</h2>
+              <p className="text-[var(--foreground)] opacity-60 text-base sm:text-lg leading-snug">View and manage patient requests and notifications.</p>
+            </div>
           </Link>
         </div>
       </div>
@@ -164,18 +173,15 @@ export default function Dashboard() {
       {/* Bottom ping button - mobile optimized */}
       <div className="fixed bottom-4 sm:bottom-6 left-0 right-0 px-4 sm:px-6 flex justify-center z-40 pointer-events-none safe-bottom">
         <button 
-          onClick={() => setShowPing(true)}
-          className="pointer-events-auto flex items-center gap-2.5 sm:gap-3 px-6 sm:px-8 py-3.5 sm:py-4 bg-[var(--surface)] border border-[var(--primary)] rounded-full text-[var(--foreground)] shadow-[0_0_20px_rgba(16,185,129,0.3)] active:shadow-[0_0_15px_rgba(16,185,129,0.2)] hover:shadow-[0_0_30px_rgba(16,185,129,0.4)] transition-all active:scale-95 touch-manipulation group"
+          onClick={() => triggerManualPrompt()}
+          className="pointer-events-auto flex items-center justify-center p-4 sm:p-5 bg-[var(--surface)] border border-[var(--primary)] rounded-full text-[var(--foreground)] shadow-[0_0_20px_rgba(16,185,129,0.3)] active:shadow-[0_0_15px_rgba(16,185,129,0.2)] hover:shadow-[0_0_30px_rgba(16,185,129,0.4)] transition-all active:scale-95 touch-manipulation group aspect-square"
+          aria-label="Simulate Caregiver Ping"
         >
-          <BellRing size={22} className="text-[var(--primary)] sm:w-6 sm:h-6 group-active:animate-ping" />
-          <span className="font-semibold text-base sm:text-lg">Simulate Caregiver Ping</span>
+          <BellRing size={24} className="text-[var(--primary)] sm:w-7 sm:h-7 group-active:animate-ping" />
         </button>
       </div>
 
-      <IncomingCallOverlay 
-        isVisible={showPing} 
-        onDismiss={() => setShowPing(false)} 
-      />
+
     </main>
   );
 }

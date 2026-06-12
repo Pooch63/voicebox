@@ -116,7 +116,6 @@ export type PingResponse = {
   responded_at: string | null;
   created_at: string;
   doordash_order_id: string | null;
-  created_at: string;
   updated_at: string;
 };
 

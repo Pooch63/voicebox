@@ -9,16 +9,16 @@ interface ListeningIndicatorProps {
 export const ListeningIndicator = ({ isActive = false, onStart }: ListeningIndicatorProps) => {
   const { appState, connectionHealth } = useAppStore();
 
-  if (!connectionHealth.mic) {
-    return (
-      <div className="flex flex-col items-center justify-center p-4">
-        <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center text-red-500">
-          <MicOff size={32} />
-        </div>
-        <p className="mt-2 text-sm text-red-400">Microphone Disabled</p>
-      </div>
-    );
-  }
+//   if (!connectionHealth.mic) {
+//     return (
+//       <div className="flex flex-col items-center justify-center p-4">
+//         <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center text-red-500">
+//           <MicOff size={32} />
+//         </div>
+//         <p className="mt-2 text-sm text-red-400">Microphone Disabled</p>
+//       </div>
+//     );
+//   }
 
   const isListening = appState === 'listening';
   const isProcessing = appState === 'processing';

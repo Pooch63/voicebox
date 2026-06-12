@@ -199,30 +199,66 @@ export function HeartbeatPromptOverlay({ prompt, onDismiss, onComplete }: Heartb
 
         {/* Action Buttons */}
         {!feedback && !processing && (
-          <div className="flex gap-4">
-            <button
-              onClick={isRecording ? stopRecording : handleStartListening}
-              className="flex-1 py-5 bg-[var(--primary)] hover:opacity-90 active:scale-95 text-white rounded-2xl font-bold text-xl transition-all shadow-lg flex items-center justify-center gap-3"
-            >
-              {isRecording ? (
-                <>
-                  <Square size={24} />
-                  Stop
-                </>
-              ) : (
-                <>
-                  <Mic size={24} />
-                  Start
-                </>
-              )}
-            </button>
-            
-            <button
-              onClick={onDismiss}
-              className="px-8 py-5 bg-gray-500 hover:bg-gray-600 active:scale-95 text-white rounded-2xl font-bold text-xl transition-all"
-            >
-              Skip
-            </button>
+          <div className="flex flex-col gap-4">
+            {prompt.type === 'hunger_check' ? (
+              <div className="flex gap-4">
+                <button
+                  onClick={() => {
+                    setFeedback("You said: No");
+                    setTimeout(() => onComplete(), 2000);
+                  }}
+                  className="flex-1 py-5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-2xl font-bold text-xl transition-all"
+                >
+                  No
+                </button>
+                <button
+                  onClick={() => {
+                    setFeedback("You said: Yes");
+                    setTimeout(() => onComplete(), 2000);
+                  }}
+                  className="flex-1 py-5 bg-green-500/10 hover:bg-green-500/20 text-green-500 rounded-2xl font-bold text-xl transition-all"
+                >
+                  Yes
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2 sm:gap-4">
+                <button
+                  onClick={isRecording ? stopRecording : handleStartListening}
+                  className="flex-1 py-5 bg-[var(--primary)] hover:opacity-90 active:scale-95 text-white rounded-2xl font-bold text-lg sm:text-xl transition-all shadow-lg flex items-center justify-center gap-2"
+                >
+                  {isRecording ? (
+                    <>
+                      <Square size={20} />
+                      Stop
+                    </>
+                  ) : (
+                    <>
+                      <Mic size={20} />
+                      Start
+                    </>
+                  )}
+                </button>
+                
+                <button
+                  onClick={() => {
+                    setFeedback("Great job! Clarity: 95%");
+                    setTimeout(() => onComplete(), 2000);
+                  }}
+                  className="px-4 sm:px-6 py-5 bg-green-500/20 hover:bg-green-500/30 text-green-600 active:scale-95 rounded-2xl font-bold text-lg sm:text-xl transition-all"
+                  title="Simulate Success"
+                >
+                  ✓ Demo
+                </button>
+                
+                <button
+                  onClick={onDismiss}
+                  className="px-4 sm:px-6 py-5 bg-gray-500 hover:bg-gray-600 active:scale-95 text-white rounded-2xl font-bold text-lg sm:text-xl transition-all"
+                >
+                  Skip
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -7,6 +7,7 @@ export interface SessionPreferences {
   choiceInteraction: ChoiceInteraction;
   showImages: boolean;
   showText: boolean;
+  readOptionsAloud: boolean;
   language: string;
 }
 
@@ -15,6 +16,7 @@ export const DEFAULT_SESSION_PREFERENCES: SessionPreferences = {
   choiceInteraction: 'tap',
   showImages: true,
   showText: true,
+  readOptionsAloud: true,
   language: 'en',
 };
 

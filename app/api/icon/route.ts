@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import fs from 'fs';
+import path from 'path';
 
 class LRUCache<K, V> {
   private cache: Map<K, V>;
@@ -123,49 +125,54 @@ export async function GET(req: Request) {
       });
     }
 
-    // Tier 2: Iconify Noto
-    try {
-      const notoRes = await fetch(`https://api.iconify.design/noto/${encodeURIComponent(cleanWord)}.svg`);
-      if (notoRes.ok) {
-        const iconUrl = `https://api.iconify.design/noto/${encodeURIComponent(cleanWord)}.svg`;
-        const result = { url: iconUrl, source: 'noto' };
-        iconLruCache.set(cleanWord, result);
-        return NextResponse.json(result, { headers: { 'Cache-Control': 'public, max-age=86400' } });
-      }
-    } catch (e) {
-      console.warn('Noto fetch failed:', e);
+    const hyphenWord = cleanWord.replace(/\s+/g, '-');
+    
+    // Tier 2: Local OpenMoji
+    const openmojiPath = path.join(process.cwd(), 'public', 'icons', 'openmoji', `${hyphenWord}.svg`);
+    if (fs.existsSync(openmojiPath)) {
+      const result = { url: `/icons/openmoji/${hyphenWord}.svg`, source: 'openmoji' };
+      iconLruCache.set(cleanWord, result);
+      return NextResponse.json(result, { headers: { 'Cache-Control': 'public, max-age=86400' } });
     }
 
-    // Tier 3: Iconify General Search
-    try {
-      const searchRes = await fetch(`https://api.iconify.design/search?query=${encodeURIComponent(cleanWord)}&limit=1`);
-      if (searchRes.ok) {
-        const searchData = await searchRes.json();
-        if (searchData.icons && searchData.icons.length > 0) {
-          const iconName = searchData.icons[0];
-          let prefix, name;
-          if (iconName.includes(':')) {
-             [prefix, name] = iconName.split(':');
-          } else if (iconName.includes('-')) {
-             // Some icons might be prefix-name, but typically Iconify Search returns prefix:name
-             const parts = iconName.split('-');
-             prefix = parts[0];
-             name = parts.slice(1).join('-');
-          } else {
-             prefix = '';
-             name = iconName;
-          }
-          
-          if (prefix && name) {
-            const iconUrl = `https://api.iconify.design/${prefix}/${name}.svg`;
-            const result = { url: iconUrl, source: 'iconify' };
+    // Tier 3: Local Twemoji
+    const twemojiPath = path.join(process.cwd(), 'public', 'icons', 'twemoji', `${hyphenWord}.svg`);
+    if (fs.existsSync(twemojiPath)) {
+      const result = { url: `/icons/twemoji/${hyphenWord}.svg`, source: 'twemoji' };
+      iconLruCache.set(cleanWord, result);
+      return NextResponse.json(result, { headers: { 'Cache-Control': 'public, max-age=86400' } });
+    }
+
+    // Tier 4: fal.ai sana sprint
+    if (process.env.FAL_KEY) {
+      try {
+        const falRes = await fetch("https://fal.run/fal-ai/sana/sprint", {
+          method: "POST",
+          headers: {
+            "Authorization": `Key ${process.env.FAL_KEY}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            prompt: `A clear, simple icon representing the concept of '${cleanWord}', designed to be easily understood by a stroke patient. White background, simple lines, highly legible, vector art style.`,
+            width: 512,
+            height: 512
+          })
+        });
+
+        if (falRes.ok) {
+          const data = await falRes.json();
+          if (data.images && data.images.length > 0) {
+            const iconUrl = data.images[0].url;
+            const result = { url: iconUrl, source: 'fal' };
             iconLruCache.set(cleanWord, result);
             return NextResponse.json(result, { headers: { 'Cache-Control': 'public, max-age=86400' } });
           }
+        } else {
+          console.error("fal api error", await falRes.text());
         }
+      } catch(e) {
+        console.warn("fal generation failed", e);
       }
-    } catch (e) {
-      console.warn('Iconify search failed:', e);
     }
 
     // Fallback

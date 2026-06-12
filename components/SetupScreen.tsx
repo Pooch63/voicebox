@@ -245,6 +245,12 @@ export const SetupScreen = () => {
                     label="Show text"
                     description="Display words on choices"
                   />
+                  <Toggle
+                    checked={prefs.readOptionsAloud ?? true}
+                    onChange={(v) => updatePref('readOptionsAloud', v)}
+                    label="Read options aloud"
+                    description="Speak the selected option out loud"
+                  />
                 </div>
               </div>
             </div>

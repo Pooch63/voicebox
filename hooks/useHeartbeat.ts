@@ -50,12 +50,15 @@ export function useHeartbeat({ enabled, intervalMinutes, onPrompt }: HeartbeatCo
     }
   }, [enabled]);
 
-  const generatePrompt = useCallback((): HeartbeatPrompt => {
-    // Alternate between hunger check and therapy prompt
-    const nextType: HeartbeatPromptType = 
-      lastTypeRef.current === 'hunger_check' ? 'therapy_prompt' : 'hunger_check';
-    
-    lastTypeRef.current = nextType;
+  const generatePrompt = useCallback((typeOverride?: HeartbeatPromptType): HeartbeatPrompt => {
+    // Alternate between hunger check and therapy prompt if no override
+    let nextType: HeartbeatPromptType;
+    if (typeOverride) {
+      nextType = typeOverride;
+    } else {
+      nextType = lastTypeRef.current === 'hunger_check' ? 'therapy_prompt' : 'hunger_check';
+      lastTypeRef.current = nextType;
+    }
 
     if (nextType === 'hunger_check') {
       return {
@@ -77,16 +80,18 @@ export function useHeartbeat({ enabled, intervalMinutes, onPrompt }: HeartbeatCo
     }
   }, [therapyWords]);
 
-  const triggerPrompt = useCallback(() => {
-    if (!enabled) return;
+  const triggerPrompt = useCallback((typeOverride?: HeartbeatPromptType, isManual: boolean = false) => {
+    if (!enabled && !isManual) return;
     
-    const prompt = generatePrompt();
+    const prompt = generatePrompt(typeOverride);
     setLastPrompt(prompt);
     onPrompt(prompt);
     
-    // Schedule next prompt
-    const nextTime = Date.now() + (intervalMinutes * 60 * 1000);
-    setNextPromptAt(nextTime);
+    // Schedule next prompt if enabled
+    if (enabled) {
+      const nextTime = Date.now() + (intervalMinutes * 60 * 1000);
+      setNextPromptAt(nextTime);
+    }
   }, [enabled, intervalMinutes, generatePrompt, onPrompt]);
 
   // Start/stop heartbeat
@@ -125,8 +130,8 @@ export function useHeartbeat({ enabled, intervalMinutes, onPrompt }: HeartbeatCo
     setNextPromptAt(nextTime);
   }, [intervalMinutes]);
 
-  const triggerManualPrompt = useCallback(() => {
-    triggerPrompt();
+  const triggerManualPrompt = useCallback((typeOverride?: HeartbeatPromptType) => {
+    triggerPrompt(typeOverride, true);
   }, [triggerPrompt]);
 
   return {

@@ -51,7 +51,7 @@ function ChoiceContent({
 
 export const ResponseButtons = () => {
   const { responseOptions, appState, sessionPreferences, addConversationTurn } = useAppStore();
-  const { speak } = useAudioOutput();
+  const { speak, resumeCaregiverListening } = useAudioOutput();
   const [activeButtonIndex, setActiveButtonIndex] = useState<number | null>(null);
   const [focusedIndex, setFocusedIndex] = useState(0);
 
@@ -63,10 +63,15 @@ export const ResponseButtons = () => {
     (index: number, spokenText: string) => {
       setActiveButtonIndex(index);
       addConversationTurn('user', spokenText);
-      speak(spokenText);
+      
+      if (sessionPreferences?.readOptionsAloud !== false) {
+        speak(spokenText);
+      } else {
+        resumeCaregiverListening();
+      }
       setTimeout(() => setActiveButtonIndex(null), 300);
     },
-    [addConversationTurn, speak],
+    [addConversationTurn, speak, sessionPreferences?.readOptionsAloud, resumeCaregiverListening],
   );
 
   useEffect(() => {

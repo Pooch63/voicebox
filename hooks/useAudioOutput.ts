@@ -16,6 +16,9 @@ function pickVoice(lang: string): SpeechSynthesisVoice | undefined {
   );
 }
 
+// Keep a reference to prevent Safari/Chrome from garbage collecting the utterance before onend fires
+let activeUtterance: SpeechSynthesisUtterance | null = null;
+
 export const useAudioOutput = () => {
   const setAppState = useAppStore((state) => state.setAppState);
   const setAwaitingUserResponse = useAppStore((state) => state.setAwaitingUserResponse);
@@ -51,12 +54,15 @@ export const useAudioOutput = () => {
 
       utterance.onend = () => {
         resumeCaregiverListening();
+        activeUtterance = null;
       };
 
       utterance.onerror = () => {
         resumeCaregiverListening();
+        activeUtterance = null;
       };
 
+      activeUtterance = utterance;
       window.speechSynthesis.speak(utterance);
     },
     [setAppState, sessionLanguage, resumeCaregiverListening],
@@ -65,9 +71,10 @@ export const useAudioOutput = () => {
   const cancel = useCallback(() => {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
+      activeUtterance = null;
       setAppState('idle');
     }
   }, [setAppState]);
 
-  return { speak, cancel };
+  return { speak, cancel, resumeCaregiverListening };
 };
