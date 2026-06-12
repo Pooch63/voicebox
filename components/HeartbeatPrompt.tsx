@@ -18,8 +18,20 @@ export function HeartbeatPromptOverlay({ prompt, onDismiss, onComplete }: Heartb
   const [iconUrl, setIconUrl] = useState<string | null>(null);
   
   const mediaRecorder = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const audioChunks = useRef<Blob[]>([]);
   const stopTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+      if (mediaRecorder.current && mediaRecorder.current.state === "recording") {
+        mediaRecorder.current.stop();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (prompt.therapyWord) {
@@ -44,6 +56,7 @@ export function HeartbeatPromptOverlay({ prompt, onDismiss, onComplete }: Heartb
   const handleStartListening = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
       const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
       mediaRecorder.current = new MediaRecorder(stream, { mimeType });
       audioChunks.current = [];
@@ -110,10 +123,10 @@ export function HeartbeatPromptOverlay({ prompt, onDismiss, onComplete }: Heartb
       mediaRecorder.current.start();
       setIsRecording(true);
       
-      // Auto-stop after 10 seconds
+      // Auto-stop after 4 seconds to match therapy settings
       stopTimeout.current = setTimeout(() => {
         stopRecording();
-      }, 10000);
+      }, 4000);
       
     } catch (error) {
       console.error("Error starting recording:", error);
@@ -199,61 +212,62 @@ export function HeartbeatPromptOverlay({ prompt, onDismiss, onComplete }: Heartb
 
         {/* Action Buttons */}
         {!feedback && !processing && (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 mt-4">
             {prompt.type === 'hunger_check' ? (
-              <div className="flex gap-4">
+              <div className="flex gap-4 w-full px-4">
                 <button
                   onClick={() => {
-                    setFeedback("You said: No");
+                    setFeedback("Got it. Let us know if you need anything else.");
                     setTimeout(() => onComplete(), 2000);
                   }}
-                  className="flex-1 py-5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-2xl font-bold text-xl transition-all"
+                  className="flex-1 py-5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-2xl font-bold text-2xl transition-all shadow-md active:scale-95"
                 >
                   No
                 </button>
                 <button
-                  onClick={() => {
-                    setFeedback("You said: Yes");
-                    setTimeout(() => onComplete(), 2000);
+                  onClick={async () => {
+                    setProcessing(true);
+                    try {
+                      await fetch("/api/notifications", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          notification_type: "food_request",
+                          title: "Food Request",
+                          message: "Patient is hungry and would like food",
+                          priority: "normal"
+                        })
+                      });
+                      setFeedback("Notification Sent! Your caregiver has been notified.");
+                    } catch (error) {
+                      setFeedback("Error sending notification");
+                    } finally {
+                      setProcessing(false);
+                      setTimeout(() => onComplete(), 2000);
+                    }
                   }}
-                  className="flex-1 py-5 bg-green-500/10 hover:bg-green-500/20 text-green-500 rounded-2xl font-bold text-xl transition-all"
+                  className="flex-1 py-5 bg-green-500/10 hover:bg-green-500/20 text-green-500 rounded-2xl font-bold text-2xl transition-all shadow-md active:scale-95"
                 >
                   Yes
                 </button>
               </div>
             ) : (
-              <div className="flex gap-2 sm:gap-4">
+              <div className="flex flex-col items-center gap-6">
                 <button
-                  onClick={isRecording ? stopRecording : handleStartListening}
-                  className="flex-1 py-5 bg-[var(--primary)] hover:opacity-90 active:scale-95 text-white rounded-2xl font-bold text-lg sm:text-xl transition-all shadow-lg flex items-center justify-center gap-2"
+                  onClick={isRecording ? undefined : handleStartListening}
+                  className={`w-28 h-28 rounded-full flex items-center justify-center text-white transition-all shadow-xl ${
+                    isRecording 
+                      ? "bg-red-500 animate-pulse shadow-red-500/40 cursor-default" 
+                      : "bg-gradient-to-br from-[var(--primary)] to-emerald-600 hover:scale-105 active:scale-95 shadow-[var(--primary)]/40 cursor-pointer"
+                  }`}
+                  aria-label={isRecording ? "Listening" : "Press to speak"}
                 >
-                  {isRecording ? (
-                    <>
-                      <Square size={20} />
-                      Stop
-                    </>
-                  ) : (
-                    <>
-                      <Mic size={20} />
-                      Start
-                    </>
-                  )}
-                </button>
-                
-                <button
-                  onClick={() => {
-                    setFeedback("Great job! Clarity: 95%");
-                    setTimeout(() => onComplete(), 2000);
-                  }}
-                  className="px-4 sm:px-6 py-5 bg-green-500/20 hover:bg-green-500/30 text-green-600 active:scale-95 rounded-2xl font-bold text-lg sm:text-xl transition-all"
-                  title="Simulate Success"
-                >
-                  ✓ Demo
+                  <Mic size={48} className="text-white" />
                 </button>
                 
                 <button
                   onClick={onDismiss}
-                  className="px-4 sm:px-6 py-5 bg-gray-500 hover:bg-gray-600 active:scale-95 text-white rounded-2xl font-bold text-lg sm:text-xl transition-all"
+                  className="px-6 py-2 text-[var(--foreground)] opacity-50 hover:opacity-100 font-medium text-lg transition-opacity"
                 >
                   Skip
                 </button>

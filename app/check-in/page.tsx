@@ -24,8 +24,20 @@ export default function CheckInPage() {
   const [iconUrl, setIconUrl] = useState<string | null>(null);
   
   const mediaRecorder = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const audioChunks = useRef<Blob[]>([]);
   const stopTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+      if (mediaRecorder.current && mediaRecorder.current.state === "recording") {
+        mediaRecorder.current.stop();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     loadPendingPings();
@@ -104,6 +116,7 @@ export default function CheckInPage() {
     
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
       const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
       mediaRecorder.current = new MediaRecorder(stream, { mimeType });
       audioChunks.current = [];

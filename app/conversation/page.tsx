@@ -26,7 +26,11 @@ export default function Home() {
     setIsClient(true);
     const currentMode = getAppMode();
     setMode(currentMode);
-  }, []);
+    
+    return () => {
+      endSession();
+    };
+  }, [endSession]);
 
   useEffect(() => {
     if (!isClient) return;
