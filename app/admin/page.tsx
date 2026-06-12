@@ -1,126 +1,251 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Check, X, Clock, RefreshCcw } from "lucide-react";
+import { useState } from "react";
+import Link from "next/link";
+import { ArrowLeft, Users, Link2, CheckCircle2 } from "lucide-react";
 
-type Order = {
-  id: string;
-  food_name: string;
-  restaurant_name: string;
-  status: string;
-  created_at: string;
-};
+export default function AdminPage() {
+  const [tab, setTab] = useState<'create' | 'link'>('create');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
-export default function AdminDashboard() {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [processingId, setProcessingId] = useState<string | null>(null);
+  // Caregiver creation
+  const [caregiverUserId, setCaregiverUserId] = useState("");
+  const [caregiverName, setCaregiverName] = useState("");
+  const [caregiverEmail, setCaregiverEmail] = useState("");
 
-  const fetchOrders = async () => {
+  // Patient-Caregiver linking
+  const [patientId, setPatientId] = useState("");
+  const [caregiverId, setCaregiverId] = useState("");
+
+  const handleCreateCaregiver = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
+    setError("");
+    setMessage("");
+
     try {
-      const res = await fetch("/api/orders");
-      if (res.ok) {
-        const data = await res.json();
-        setOrders(data);
+      const res = await fetch("/api/admin/create-caregiver", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: caregiverUserId,
+          name: caregiverName,
+          email: caregiverEmail
+        })
+      });
+
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to create caregiver");
       }
-    } catch (error) {
-      console.error("Failed to fetch orders", error);
+
+      setMessage(`Caregiver created! ID: ${data.caregiver.caregiver_id}`);
+      setCaregiverUserId("");
+      setCaregiverName("");
+      setCaregiverEmail("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchOrders();
-    // Auto refresh every 10 seconds for the hackathon
-    const interval = setInterval(fetchOrders, 10000);
-    return () => clearInterval(interval);
-  }, []);
+  const handleLinkPatientCaregiver = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setMessage("");
 
-  const handleUpdateStatus = async (id: string, status: string) => {
-    setProcessingId(id);
     try {
-      const res = await fetch(`/api/orders/${id}`, {
-        method: "PATCH",
+      const res = await fetch("/api/admin/link-patient-caregiver", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({
+          patient_id: patientId,
+          caregiver_id: caregiverId
+        })
       });
-      if (res.ok) {
-        // Remove from list or update status
-        setOrders((prev) => prev.filter((order) => order.id !== id));
+
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to link patient and caregiver");
       }
-    } catch (error) {
-      console.error("Failed to update order", error);
+
+      setMessage("Patient and caregiver linked successfully!");
+      setPatientId("");
+      setCaregiverId("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
-      setProcessingId(null);
+      setLoading(false);
     }
   };
 
   return (
-    <main className="min-h-screen bg-[var(--background)] p-8">
+    <main className="min-h-screen bg-[var(--background)] p-6">
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-[var(--foreground)] mb-2">Caregiver Dashboard</h1>
-            <p className="text-xl text-[var(--foreground)] opacity-60">Manage food requests and alerts</p>
+        <div className="flex items-center gap-4 mb-8 pt-6">
+          <Link href="/" className="p-3 bg-[var(--surface)] rounded-full text-[var(--foreground)] hover:bg-white/10 transition-colors">
+            <ArrowLeft size={24} />
+          </Link>
+          <h1 className="text-3xl font-bold text-[var(--foreground)]">Admin Panel</h1>
+        </div>
+
+        {message && (
+          <div className="bg-green-500/10 border border-green-500/50 p-4 rounded-2xl mb-6 flex items-center gap-3 text-green-500">
+            <CheckCircle2 size={24} />
+            <p>{message}</p>
           </div>
-          <button 
-            onClick={fetchOrders}
-            className="p-3 bg-[var(--surface)] border border-[var(--border)] rounded-full text-[var(--foreground)] hover:bg-white/5 transition-colors flex items-center gap-2"
+        )}
+
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/50 p-4 rounded-2xl mb-6 text-red-500">
+            {error}
+          </div>
+        )}
+
+        {/* Tabs */}
+        <div className="flex gap-4 mb-6">
+          <button
+            onClick={() => setTab('create')}
+            className={`flex-1 py-4 rounded-2xl font-bold text-lg transition-all ${
+              tab === 'create'
+                ? 'bg-[var(--primary)] text-white'
+                : 'bg-[var(--surface)] text-[var(--foreground)] border border-[var(--border)]'
+            }`}
           >
-            <RefreshCcw size={20} className={loading ? "animate-spin" : ""} />
-            <span className="hidden sm:inline">Refresh</span>
+            <Users className="inline-block mr-2" size={20} />
+            Create Caregiver
+          </button>
+          <button
+            onClick={() => setTab('link')}
+            className={`flex-1 py-4 rounded-2xl font-bold text-lg transition-all ${
+              tab === 'link'
+                ? 'bg-[var(--primary)] text-white'
+                : 'bg-[var(--surface)] text-[var(--foreground)] border border-[var(--border)]'
+            }`}
+          >
+            <Link2 className="inline-block mr-2" size={20} />
+            Link Patient
           </button>
         </div>
 
-        <div className="bg-[var(--surface)] border border-[var(--border)]/50 rounded-3xl p-8 shadow-xl">
-          <div className="flex items-center gap-3 mb-6">
-            <Clock size={24} className="text-[var(--primary)]" />
-            <h2 className="text-2xl font-bold text-[var(--foreground)]">Pending Food Requests</h2>
-          </div>
+        {tab === 'create' ? (
+          <div className="bg-[var(--surface)] rounded-3xl p-8 border border-[var(--border)]/50">
+            <h2 className="text-2xl font-bold text-[var(--foreground)] mb-6">
+              Create Caregiver Profile
+            </h2>
 
-          {loading && orders.length === 0 ? (
-            <div className="py-12 text-center text-[var(--foreground)] opacity-50">Loading requests...</div>
-          ) : orders.length === 0 ? (
-            <div className="py-12 text-center text-[var(--foreground)] opacity-50 border-2 border-dashed border-[var(--border)] rounded-2xl">
-              No pending requests at this time.
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {orders.map((order) => (
-                <div key={order.id} className="flex flex-col sm:flex-row items-center justify-between p-6 bg-white/5 border border-white/10 rounded-2xl gap-4">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold text-[var(--foreground)] mb-1">
-                      {order.restaurant_name}
-                    </h3>
-                    <p className="text-[var(--foreground)] opacity-60">
-                      Requested at: {new Date(order.created_at).toLocaleTimeString()}
-                    </p>
-                  </div>
-                  
-                  <div className="flex items-center gap-3 w-full sm:w-auto">
-                    <button 
-                      onClick={() => handleUpdateStatus(order.id, 'rejected')}
-                      disabled={processingId === order.id}
-                      className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500/20 transition-colors font-semibold disabled:opacity-50"
-                    >
-                      <X size={20} />
-                      Reject
-                    </button>
-                    <button 
-                      onClick={() => handleUpdateStatus(order.id, 'approved')}
-                      disabled={processingId === order.id}
-                      className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-green-500/10 text-green-500 rounded-xl hover:bg-green-500/20 transition-colors font-semibold disabled:opacity-50"
-                    >
-                      <Check size={20} />
-                      Approve
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+            <form onSubmit={handleCreateCaregiver} className="space-y-4">
+              <div>
+                <label className="block text-[var(--foreground)] font-semibold mb-2">
+                  Auth User ID *
+                </label>
+                <input
+                  type="text"
+                  value={caregiverUserId}
+                  onChange={(e) => setCaregiverUserId(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 bg-white/5 border border-[var(--border)] rounded-xl text-[var(--foreground)] focus:outline-none focus:border-[var(--primary)]"
+                  placeholder="UUID from auth.users table"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[var(--foreground)] font-semibold mb-2">
+                  Name *
+                </label>
+                <input
+                  type="text"
+                  value={caregiverName}
+                  onChange={(e) => setCaregiverName(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 bg-white/5 border border-[var(--border)] rounded-xl text-[var(--foreground)] focus:outline-none focus:border-[var(--primary)]"
+                  placeholder="Caregiver Name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[var(--foreground)] font-semibold mb-2">
+                  Email *
+                </label>
+                <input
+                  type="email"
+                  value={caregiverEmail}
+                  onChange={(e) => setCaregiverEmail(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 bg-white/5 border border-[var(--border)] rounded-xl text-[var(--foreground)] focus:outline-none focus:border-[var(--primary)]"
+                  placeholder="caregiver@example.com"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-4 bg-[var(--primary)] text-white rounded-xl font-bold text-lg hover:bg-[var(--primary)]/90 transition-colors disabled:opacity-50 mt-6"
+              >
+                {loading ? "Creating..." : "Create Caregiver"}
+              </button>
+            </form>
+          </div>
+        ) : (
+          <div className="bg-[var(--surface)] rounded-3xl p-8 border border-[var(--border)]/50">
+            <h2 className="text-2xl font-bold text-[var(--foreground)] mb-6">
+              Link Patient to Caregiver
+            </h2>
+
+            <form onSubmit={handleLinkPatientCaregiver} className="space-y-4">
+              <div>
+                <label className="block text-[var(--foreground)] font-semibold mb-2">
+                  Patient ID *
+                </label>
+                <input
+                  type="text"
+                  value={patientId}
+                  onChange={(e) => setPatientId(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 bg-white/5 border border-[var(--border)] rounded-xl text-[var(--foreground)] focus:outline-none focus:border-[var(--primary)]"
+                  placeholder="UUID from users.user_id"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[var(--foreground)] font-semibold mb-2">
+                  Caregiver ID *
+                </label>
+                <input
+                  type="text"
+                  value={caregiverId}
+                  onChange={(e) => setCaregiverId(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 bg-white/5 border border-[var(--border)] rounded-xl text-[var(--foreground)] focus:outline-none focus:border-[var(--primary)]"
+                  placeholder="UUID from caregivers.caregiver_id"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-4 bg-[var(--primary)] text-white rounded-xl font-bold text-lg hover:bg-[var(--primary)]/90 transition-colors disabled:opacity-50 mt-6"
+              >
+                {loading ? "Linking..." : "Link Patient & Caregiver"}
+              </button>
+            </form>
+          </div>
+        )}
+
+        <div className="mt-8 bg-blue-500/10 border border-blue-500/50 p-6 rounded-2xl">
+          <h3 className="font-bold text-[var(--foreground)] mb-3">Quick Guide:</h3>
+          <ol className="list-decimal list-inside space-y-2 text-[var(--foreground)] opacity-80">
+            <li>First, create a caregiver profile using an auth user ID</li>
+            <li>Then, link a patient (user_id) to that caregiver</li>
+            <li>The patient can now trigger notifications that the caregiver will see</li>
+            <li>Visit <Link href="/caregiver" className="text-[var(--primary)] underline">/caregiver</Link> to view the dashboard</li>
+          </ol>
         </div>
       </div>
     </main>

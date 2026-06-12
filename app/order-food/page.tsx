@@ -43,19 +43,27 @@ export default function OrderFoodPage() {
     setOrdering(true);
     setErrorMsg("");
     try {
+      // Create order and notification for caregiver
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          food_name: "Custom Order", // Using a generic name for now, could add menu integration later
+          food_name: "Custom Order",
           restaurant_name: business.name,
+          order_details: {
+            business_id: business.id,
+            rating: business.rating,
+            image_url: business.image_url
+          }
         }),
       });
       if (!res.ok) throw new Error("Failed to place order");
-      setSuccessMsg(`Your order from ${business.name} has been sent to your caregiver for approval!`);
+      
+      const data = await res.json();
+      setSuccessMsg(`Your request from ${business.name} has been sent to your caregiver!`);
     } catch (err) {
       console.error(err);
-      setErrorMsg("Failed to place order. Please try again.");
+      setErrorMsg("Failed to send request. Please try again.");
     } finally {
       setOrdering(false);
     }

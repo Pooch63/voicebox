@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ArrowRight, ArrowLeft } from 'lucide-react';
 import { LanguageSelector } from '@/components/LanguageSelector';
 import { formatLanguageForInput, resolveLanguageInput } from '@/lib/languages';
 import {
   DEFAULT_SESSION_PREFERENCES,
   type SessionPreferences,
+  getAppMode,
 } from '@/lib/sessionPreferences';
 import { useAppStore } from '@/store/appStore';
 
@@ -123,6 +124,13 @@ export const SetupScreen = () => {
 
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+
+  // Auto-start in victim mode
+  useEffect(() => {
+    if (getAppMode() === 'victim') {
+      startSession(DEFAULT_SESSION_PREFERENCES);
+    }
+  }, [startSession]);
 
   const steps = useMemo(() => {
     const s = [
