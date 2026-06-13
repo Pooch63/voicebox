@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { MessageSquare, HeartPulse, BellRing } from "lucide-react";
-import { IncomingCallOverlay } from "@/components/IncomingCallOverlay";
 import { HeartbeatPromptOverlay } from "@/components/HeartbeatPrompt";
 import { ModeToggle } from "@/components/ModeToggle";
 import { getAppMode, type AppMode } from "@/lib/sessionPreferences";
@@ -11,7 +11,6 @@ import { useHeartbeat, type HeartbeatPrompt } from "@/hooks/useHeartbeat";
 import UserMenu from "@/components/UserMenu";
 
 export default function Dashboard() {
-  const [showPing, setShowPing] = useState(false);
   const [mode, setMode] = useState<AppMode>('caregiver');
   const [isClient, setIsClient] = useState(false);
   const [currentHeartbeatPrompt, setCurrentHeartbeatPrompt] = useState<HeartbeatPrompt | null>(null);
@@ -43,7 +42,8 @@ export default function Dashboard() {
     return (
       <main className="flex flex-col min-h-screen min-h-[100dvh] bg-[var(--background)] relative overflow-hidden">
         {/* Simple header with mode toggle */}
-        <div className="pt-4 sm:pt-6 pb-3 sm:pb-4 px-4 sm:px-6 flex justify-end safe-top">
+        <div className="pt-4 sm:pt-6 pb-3 sm:pb-4 px-4 sm:px-6 flex justify-between items-center safe-top max-w-4xl mx-auto w-full">
+          <Image src="/logo.png" alt="VoiceBack Logo" width={40} height={40} className="rounded-xl drop-shadow-sm" />
           <ModeToggle />
         </div>
         
@@ -78,21 +78,16 @@ export default function Dashboard() {
           </Link>
         </div>
 
-        {/* Ping button - mobile optimized */}
+        {/* Bottom ping button - mobile optimized */}
         <div className="fixed bottom-4 sm:bottom-6 left-0 right-0 px-4 sm:px-6 flex justify-center z-40 pointer-events-none safe-bottom">
           <button 
-            onClick={() => setShowPing(true)}
-            className="pointer-events-auto flex items-center gap-3 sm:gap-4 px-6 sm:px-10 py-4 sm:py-5 bg-[var(--surface)] border-2 sm:border-4 border-[var(--primary)] rounded-full text-[var(--foreground)] shadow-[0_0_20px_rgba(16,185,129,0.3)] active:shadow-[0_0_15px_rgba(16,185,129,0.2)] hover:shadow-[0_0_30px_rgba(16,185,129,0.4)] transition-all active:scale-95 touch-manipulation"
+            onClick={() => triggerManualPrompt()}
+            className="pointer-events-auto flex items-center justify-center p-4 sm:p-5 bg-[var(--surface)] border border-[var(--primary)] rounded-full text-[var(--foreground)] shadow-[0_0_20px_rgba(16,185,129,0.3)] active:shadow-[0_0_15px_rgba(16,185,129,0.2)] hover:shadow-[0_0_30px_rgba(16,185,129,0.4)] transition-all active:scale-95 touch-manipulation group aspect-square"
+            aria-label="Simulate Caregiver Ping"
           >
-            <BellRing size={28} className="text-[var(--primary)] sm:w-8 sm:h-8" />
-            <span className="font-bold text-xl sm:text-2xl">Call Help</span>
+            <BellRing size={24} className="text-[var(--primary)] sm:w-7 sm:h-7 group-active:animate-ping" />
           </button>
         </div>
-
-        <IncomingCallOverlay 
-          isVisible={showPing} 
-          onDismiss={() => setShowPing(false)} 
-        />
       </main>
     );
   }
@@ -112,9 +107,12 @@ export default function Dashboard() {
       {/* Header Area - mobile optimized */}
       <div className="pt-6 sm:pt-12 pb-4 sm:pb-8 px-4 sm:px-6 bg-gradient-to-b from-[var(--surface)] to-transparent safe-top">
         <div className="flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0 max-w-4xl mx-auto w-full">
-          <div>
-            <h1 className="text-3xl sm:text-4xl font-bold text-[var(--foreground)] mb-1 sm:mb-2">Good morning</h1>
-            <p className="text-lg sm:text-xl text-[var(--foreground)] opacity-60">Ready for a great day?</p>
+          <div className="flex items-center gap-3 sm:gap-4">
+            <Image src="/logo.png" alt="VoiceBack Logo" width={192} height={192} className="rounded-xl drop-shadow-sm" />
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold text-[var(--foreground)] mb-1 sm:mb-2">Good morning</h1>
+              <p className="text-lg sm:text-xl text-[var(--foreground)] opacity-60">Ready for a great day?</p>
+            </div>
           </div>
           <div className="flex gap-2 sm:gap-3">
             <ModeToggle />

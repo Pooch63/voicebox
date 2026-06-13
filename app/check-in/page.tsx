@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Bell, Check, Home } from "lucide-react";
 import { supabase } from "@/lib/db";
 import Link from "next/link";
 import { ListeningIndicator } from "@/components/ListeningIndicator";
+import { useMicrophone } from "@/hooks/useMicrophone";
+import { TherapyMicGrader } from "@/components/TherapyMicGrader";
 
 type PendingPing = {
   response_id: string;
@@ -18,26 +20,58 @@ export default function CheckInPage() {
   const [pendingPings, setPendingPings] = useState<PendingPing[]>([]);
   const [currentPing, setCurrentPing] = useState<PendingPing | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isRecording, setIsRecording] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [feedback, setFeedback] = useState("");
-  const [iconUrl, setIconUrl] = useState<string | null>(null);
-  
-  const mediaRecorder = useRef<MediaRecorder | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const audioChunks = useRef<Blob[]>([]);
-  const stopTimeout = useRef<NodeJS.Timeout | null>(null);
+  const [micStarted, setMicStarted] = useState(false);
 
-  useEffect(() => {
-    return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
+  // Process audio when speech ends (via VAD)
+  const handleSpeechEnd = useCallback(async (audioBlob: Blob) => {
+    if (!currentPing) return;
+    
+    setProcessing(true);
+    mic.clearProcessing();
+    
+    if (currentPing.ping_type === "therapy_prompt") {
+      setProcessing(false);
+      return; // Handled by TherapyMicGrader
+    } else {
+      // For other pings, just transcribe
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'recording.wav');
+
+      try {
+        const res = await fetch('/api/respond', { method: 'POST', body: formData });
+        const data = await res.json();
+        
+        if (data.transcription) {
+          setFeedback(`You said: "${data.transcription}"`);
+          await markPingResponded(data.transcription);
+        } else {
+          setFeedback("Sorry, I didn't catch that.");
+        }
+      } catch (error) {
+        console.error("Error transcribing:", error);
+        setFeedback("Error processing response");
       }
-      if (mediaRecorder.current && mediaRecorder.current.state === "recording") {
-        mediaRecorder.current.stop();
-      }
-    };
-  }, []);
+    }
+    
+    setProcessing(false);
+    
+    // Move to next ping after 2 seconds
+    setTimeout(() => {
+      moveToNextPing();
+    }, 2000);
+  }, [currentPing]);
+
+  const mic = useMicrophone({
+    onSpeechEnd: handleSpeechEnd,
+    onSpeechStart: () => {
+      // Visual feedback handled by isListening
+    },
+    onMisfire: () => {
+      // Speech too short — keep listening
+    },
+  });
 
   useEffect(() => {
     loadPendingPings();
@@ -60,18 +94,14 @@ export default function CheckInPage() {
 
     return () => {
       supabase.removeChannel(channel);
+      mic.stop();
     };
   }, []);
   
   useEffect(() => {
-    if (currentPing?.therapy_word) {
-      fetch(`/api/icon?q=${encodeURIComponent(currentPing.therapy_word)}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.url) setIconUrl(data.url);
-        })
-        .catch(() => setIconUrl(null));
-    }
+    // Reset mic state when ping changes
+    setMicStarted(false);
+    mic.stop();
   }, [currentPing]);
 
   const loadPendingPings = async () => {
@@ -102,110 +132,6 @@ export default function CheckInPage() {
     }
   };
 
-  const stopRecording = useCallback(() => {
-    if (mediaRecorder.current && mediaRecorder.current.state === "recording") {
-      mediaRecorder.current.stop();
-    }
-    if (stopTimeout.current) {
-      clearTimeout(stopTimeout.current);
-    }
-  }, []);
-
-  const handleStartListening = useCallback(async () => {
-    if (!currentPing) return;
-    
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
-      mediaRecorder.current = new MediaRecorder(stream, { mimeType });
-      audioChunks.current = [];
-
-      mediaRecorder.current.ondataavailable = (event) => {
-        if (event.data.size > 0) audioChunks.current.push(event.data);
-      };
-
-      mediaRecorder.current.onstop = async () => {
-        stream.getTracks().forEach(track => track.stop());
-        setIsRecording(false);
-        setProcessing(true);
-        
-        const audioBlob = new Blob(audioChunks.current, { type: mimeType });
-        
-        if (currentPing.ping_type === "therapy_prompt" && currentPing.therapy_word) {
-          // Score therapy response
-          const formData = new FormData();
-          formData.append('audio', audioBlob);
-          formData.append('targetWord', currentPing.therapy_word);
-
-          try {
-            const res = await fetch('/api/therapy-score', { method: 'POST', body: formData });
-            const data = await res.json();
-            
-            if (data.error) {
-              setFeedback("Error: " + data.error);
-            } else {
-              const clarity = data.clarity ? `${(data.clarity * 100).toFixed(0)}%` : 'N/A';
-              setFeedback(`Great job! Clarity: ${clarity}`);
-              
-              // Save response
-              await markPingResponded(data.transcribed || "");
-            }
-          } catch (error) {
-            console.error("Error scoring therapy:", error);
-            setFeedback("Error processing response");
-          }
-        } else {
-          // For other pings, just transcribe
-          const formData = new FormData();
-          formData.append('audio', audioBlob);
-
-          try {
-            const res = await fetch('/api/respond', { method: 'POST', body: formData });
-            const data = await res.json();
-            
-            if (data.transcription) {
-              setFeedback(`You said: "${data.transcription}"`);
-              await markPingResponded(data.transcription);
-            } else {
-              setFeedback("Sorry, I didn't catch that.");
-            }
-          } catch (error) {
-            console.error("Error transcribing:", error);
-            setFeedback("Error processing response");
-          }
-        }
-        
-        setProcessing(false);
-        
-        // Move to next ping after 2 seconds
-        setTimeout(() => {
-          setFeedback("");
-          const nextPings = pendingPings.filter(p => p.response_id !== currentPing.response_id);
-          if (nextPings.length > 0) {
-            setCurrentPing(nextPings[0]);
-            setPendingPings(nextPings);
-          } else {
-            setCurrentPing(null);
-            setPendingPings([]);
-          }
-        }, 2000);
-      };
-
-      mediaRecorder.current.start();
-      setIsRecording(true);
-      
-      // Auto-stop after 10 seconds
-      stopTimeout.current = setTimeout(() => {
-        stopRecording();
-      }, 10000);
-      
-    } catch (error) {
-      console.error("Error starting recording:", error);
-      setFeedback("Could not access microphone");
-    }
-  }, [currentPing, pendingPings, stopRecording]);
-
   const markPingResponded = async (responseText: string) => {
     if (!currentPing) return;
     
@@ -222,19 +148,33 @@ export default function CheckInPage() {
     }
   };
 
+  const moveToNextPing = () => {
+    setFeedback("");
+    setMicStarted(false);
+    mic.stop();
+    
+    setPendingPings(prev => {
+      const nextPings = prev.filter(p => p.response_id !== currentPing?.response_id);
+      if (nextPings.length > 0) {
+        setCurrentPing(nextPings[0]);
+      } else {
+        setCurrentPing(null);
+      }
+      return nextPings;
+    });
+  };
+
+  const handleStartListening = useCallback(() => {
+    setMicStarted(true);
+    mic.start();
+  }, [mic]);
+
   const handleSkip = async () => {
     if (!currentPing) return;
     
+    mic.stop();
     await markPingResponded("Skipped");
-    
-    const nextPings = pendingPings.filter(p => p.response_id !== currentPing.response_id);
-    if (nextPings.length > 0) {
-      setCurrentPing(nextPings[0]);
-      setPendingPings(nextPings);
-    } else {
-      setCurrentPing(null);
-      setPendingPings([]);
-    }
+    moveToNextPing();
   };
 
   if (loading) {
@@ -289,15 +229,6 @@ export default function CheckInPage() {
           
           {/* Question Display */}
           <div className="bg-[var(--surface)] rounded-3xl p-8 mb-8 text-center border border-[var(--border)]/50 shadow-lg">
-            {currentPing.ping_type === "therapy_prompt" && iconUrl && (
-              <div className="mb-6">
-                <img 
-                  src={iconUrl} 
-                  alt={currentPing.therapy_word || ""}
-                  className="w-32 h-32 mx-auto"
-                />
-              </div>
-            )}
             
             <h2 className="text-4xl font-bold text-[var(--foreground)] mb-4">
               {currentPing.question}
@@ -305,7 +236,7 @@ export default function CheckInPage() {
             
             {currentPing.ping_type === "therapy_prompt" && (
               <p className="text-xl text-[var(--foreground)] opacity-60">
-                Tap the button and say the word clearly
+                {micStarted ? '' : 'Tap the button and say the word clearly'}
               </p>
             )}
             
@@ -316,47 +247,74 @@ export default function CheckInPage() {
             )}
           </div>
 
-          {/* Listening Indicator */}
-          {isRecording && (
-            <div className="mb-8">
-              <ListeningIndicator isListening={true} />
-              <p className="text-center text-[var(--foreground)] opacity-70 mt-4">
-                Listening... Tap again to stop
-              </p>
+          {currentPing.ping_type === "therapy_prompt" ? (
+            <div className="flex flex-col items-center">
+              <TherapyMicGrader
+                targetWord={currentPing.therapy_word!}
+                mode="victim"
+                autoStart={false}
+                sessionActive={true}
+                onSuccess={(word, scoreData) => {
+                  markPingResponded(`Therapy: ${word} - ${(scoreData.score * 100).toFixed(0)}%`);
+                  setTimeout(() => {
+                    moveToNextPing();
+                  }, 2000);
+                }}
+              />
+              <button
+                onClick={handleSkip}
+                className="mt-6 px-8 py-4 bg-gray-500 hover:bg-gray-600 active:scale-95 text-white rounded-2xl font-bold text-xl transition-all shadow-xl"
+              >
+                Skip
+              </button>
             </div>
-          )}
+          ) : (
+            <>
+              {/* Listening Indicator */}
+              {micStarted && (mic.isListening || (!feedback && !processing)) && (
+                <div className="mb-8">
+                  <ListeningIndicator isActive={true} isListening={mic.isListening} />
+                  <p className="text-center text-[var(--foreground)] opacity-70 mt-4">
+                    {mic.isListening ? 'Listening...' : 'Ready — speak now'}
+                  </p>
+                </div>
+              )}
 
-          {/* Processing/Feedback */}
-          {processing && (
-            <div className="text-center mb-8">
-              <p className="text-xl text-[var(--foreground)]">Processing...</p>
-            </div>
-          )}
-          
-          {feedback && !processing && (
-            <div className="bg-green-500/10 border border-green-500/50 rounded-2xl p-6 mb-8 text-center">
-              <p className="text-xl font-semibold text-green-500">{feedback}</p>
-            </div>
-          )}
+              {/* Processing/Feedback */}
+              {processing && (
+                <div className="text-center mb-8">
+                  <p className="text-xl text-[var(--foreground)]">Processing...</p>
+                </div>
+              )}
+              
+              {feedback && !processing && (
+                <div className="bg-green-500/10 border border-green-500/50 rounded-2xl p-6 mb-8 text-center">
+                  <p className="text-xl font-semibold text-green-500">{feedback}</p>
+                </div>
+              )}
 
-          {/* Action Buttons */}
-          <div className="flex gap-4">
-            <button
-              onClick={isRecording ? stopRecording : handleStartListening}
-              disabled={processing}
-              className="flex-1 py-6 bg-[var(--primary)] hover:opacity-90 active:scale-95 text-white rounded-2xl font-bold text-2xl transition-all disabled:opacity-50 shadow-xl"
-            >
-              {isRecording ? "Stop" : "Start"}
-            </button>
-            
-            <button
-              onClick={handleSkip}
-              disabled={processing || isRecording}
-              className="px-8 py-6 bg-gray-500 hover:bg-gray-600 active:scale-95 text-white rounded-2xl font-bold text-xl transition-all disabled:opacity-50"
-            >
-              Skip
-            </button>
-          </div>
+              {/* Action Buttons */}
+              {!feedback && !processing && (
+                <div className="flex gap-4">
+                  <button
+                    onClick={micStarted ? () => mic.stop() : handleStartListening}
+                    disabled={mic.loading}
+                    className="flex-1 py-6 bg-[var(--primary)] hover:opacity-90 active:scale-95 text-white rounded-2xl font-bold text-2xl transition-all disabled:opacity-50 shadow-xl"
+                  >
+                    {mic.loading ? 'Loading...' : micStarted ? 'Stop' : 'Start'}
+                  </button>
+                  
+                  <button
+                    onClick={handleSkip}
+                    disabled={processing}
+                    className="px-8 py-6 bg-gray-500 hover:bg-gray-600 active:scale-95 text-white rounded-2xl font-bold text-xl transition-all disabled:opacity-50"
+                  >
+                    Skip
+                  </button>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </main>

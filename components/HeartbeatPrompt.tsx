@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
-import { X, Mic, Square } from "lucide-react";
+import { useState, useCallback, useEffect } from "react";
+import { X, Mic } from "lucide-react";
 import { ListeningIndicator } from "./ListeningIndicator";
+import { useMicrophone } from "@/hooks/useMicrophone";
 import type { HeartbeatPrompt } from "@/hooks/useHeartbeat";
 
 type HeartbeatPromptProps = {
@@ -12,26 +13,10 @@ type HeartbeatPromptProps = {
 };
 
 export function HeartbeatPromptOverlay({ prompt, onDismiss, onComplete }: HeartbeatPromptProps) {
-  const [isRecording, setIsRecording] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [iconUrl, setIconUrl] = useState<string | null>(null);
-  
-  const mediaRecorder = useRef<MediaRecorder | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const audioChunks = useRef<Blob[]>([]);
-  const stopTimeout = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
-      if (mediaRecorder.current && mediaRecorder.current.state === "recording") {
-        mediaRecorder.current.stop();
-      }
-    };
-  }, []);
+  const [micStarted, setMicStarted] = useState(false);
 
   useEffect(() => {
     if (prompt.therapyWord) {
@@ -44,95 +29,79 @@ export function HeartbeatPromptOverlay({ prompt, onDismiss, onComplete }: Heartb
     }
   }, [prompt.therapyWord]);
 
-  const stopRecording = useCallback(() => {
-    if (mediaRecorder.current && mediaRecorder.current.state === "recording") {
-      mediaRecorder.current.stop();
-    }
-    if (stopTimeout.current) {
-      clearTimeout(stopTimeout.current);
-    }
-  }, []);
+  const handleSpeechEnd = useCallback(async (audioBlob: Blob) => {
+    setProcessing(true);
+    mic.clearProcessing();
+    
+    if (prompt.type === "therapy_prompt" && prompt.therapyWord) {
+      // Score therapy response
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'recording.wav');
+      formData.append('targetWord', prompt.therapyWord);
 
-  const handleStartListening = useCallback(async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
-      mediaRecorder.current = new MediaRecorder(stream, { mimeType });
-      audioChunks.current = [];
-
-      mediaRecorder.current.ondataavailable = (event) => {
-        if (event.data.size > 0) audioChunks.current.push(event.data);
-      };
-
-      mediaRecorder.current.onstop = async () => {
-        stream.getTracks().forEach(track => track.stop());
-        setIsRecording(false);
-        setProcessing(true);
+      try {
+        const res = await fetch('/api/therapy-score', { method: 'POST', body: formData });
+        const data = await res.json();
         
-        const audioBlob = new Blob(audioChunks.current, { type: mimeType });
-        
-        if (prompt.type === "therapy_prompt" && prompt.therapyWord) {
-          // Score therapy response
-          const formData = new FormData();
-          formData.append('audio', audioBlob);
-          formData.append('targetWord', prompt.therapyWord);
-
-          try {
-            const res = await fetch('/api/therapy-score', { method: 'POST', body: formData });
-            const data = await res.json();
-            
-            if (data.error) {
-              setFeedback("Error: " + data.error);
-            } else {
-              const clarity = data.clarity ? `${(data.clarity * 100).toFixed(0)}%` : 'N/A';
-              setFeedback(`Great job! Clarity: ${clarity}`);
-            }
-          } catch (error) {
-            console.error("Error scoring therapy:", error);
-            setFeedback("Error processing response");
-          }
+        if (data.error) {
+          setFeedback("Error: " + data.error);
         } else {
-          // For hunger check, just transcribe
-          const formData = new FormData();
-          formData.append('audio', audioBlob);
-
-          try {
-            const res = await fetch('/api/respond', { method: 'POST', body: formData });
-            const data = await res.json();
-            
-            if (data.transcription) {
-              setFeedback(`You said: "${data.transcription}"`);
-            } else {
-              setFeedback("Got it!");
-            }
-          } catch (error) {
-            console.error("Error transcribing:", error);
-            setFeedback("Error processing response");
-          }
+          const clarity = data.clarity ? `${(data.clarity * 100).toFixed(0)}%` : 'N/A';
+          setFeedback(`Great job! Clarity: ${clarity}`);
         }
-        
-        setProcessing(false);
-        
-        // Auto-close after showing feedback
-        setTimeout(() => {
-          onComplete();
-        }, 2000);
-      };
+      } catch (error) {
+        console.error("Error scoring therapy:", error);
+        setFeedback("Error processing response");
+      }
+    } else {
+      // For hunger check, just transcribe
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'recording.wav');
 
-      mediaRecorder.current.start();
-      setIsRecording(true);
-      
-      // Auto-stop after 4 seconds to match therapy settings
-      stopTimeout.current = setTimeout(() => {
-        stopRecording();
-      }, 4000);
-      
-    } catch (error) {
-      console.error("Error starting recording:", error);
-      setFeedback("Could not access microphone");
+      try {
+        const res = await fetch('/api/respond', { method: 'POST', body: formData });
+        const data = await res.json();
+        
+        if (data.transcription) {
+          setFeedback(`You said: "${data.transcription}"`);
+        } else {
+          setFeedback("Got it!");
+        }
+      } catch (error) {
+        console.error("Error transcribing:", error);
+        setFeedback("Error processing response");
+      }
     }
-  }, [prompt, stopRecording, onComplete]);
+    
+    setProcessing(false);
+    
+    // Auto-close after showing feedback
+    setTimeout(() => {
+      onComplete();
+    }, 2000);
+  }, [prompt, onComplete]);
+
+  const mic = useMicrophone({
+    onSpeechEnd: handleSpeechEnd,
+    onSpeechStart: () => {
+      // Speech detected — visual feedback is handled by isListening
+    },
+    onMisfire: () => {
+      // Speech too short — keep listening
+    },
+  });
+
+  const handleStartListening = useCallback(() => {
+    setMicStarted(true);
+    mic.start();
+  }, [mic]);
+
+  // Clean up mic when component unmounts
+  useEffect(() => {
+    return () => {
+      mic.stop();
+    };
+  }, []);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
@@ -150,7 +119,10 @@ export function HeartbeatPromptOverlay({ prompt, onDismiss, onComplete }: Heartb
             </h2>
           </div>
           <button
-            onClick={onDismiss}
+            onClick={() => {
+              mic.stop();
+              onDismiss();
+            }}
             className="w-10 h-10 rounded-full bg-gray-500/20 hover:bg-gray-500/30 flex items-center justify-center transition-colors"
           >
             <X size={20} className="text-[var(--foreground)]" />
@@ -175,17 +147,23 @@ export function HeartbeatPromptOverlay({ prompt, onDismiss, onComplete }: Heartb
           
           {prompt.type === "therapy_prompt" && (
             <p className="text-lg text-[var(--foreground)] opacity-60">
-              Tap the microphone and say the word clearly
+              {micStarted ? '' : 'Tap the microphone and say the word clearly'}
+            </p>
+          )}
+          
+          {prompt.type === "hunger_check" && (
+            <p className="text-lg text-[var(--foreground)] opacity-60">
+              Tap the microphone to answer
             </p>
           )}
         </div>
 
         {/* Listening Indicator */}
-        {isRecording && (
+        {micStarted && (mic.isListening || (!feedback && !processing)) && (
           <div className="mb-6">
-            <ListeningIndicator isActive={true} />
+            <ListeningIndicator isActive={true} isListening={mic.isListening} />
             <p className="text-center text-[var(--foreground)] opacity-70 mt-4">
-              Listening
+              {mic.isListening ? 'Listening...' : 'Ready — speak now'}
             </p>
           </div>
         )}
@@ -211,6 +189,7 @@ export function HeartbeatPromptOverlay({ prompt, onDismiss, onComplete }: Heartb
               <div className="flex gap-4 w-full px-4">
                 <button
                   onClick={() => {
+                    mic.stop();
                     setFeedback("Got it. Let us know if you need anything else.");
                     setTimeout(() => onComplete(), 2000);
                   }}
@@ -220,6 +199,7 @@ export function HeartbeatPromptOverlay({ prompt, onDismiss, onComplete }: Heartb
                 </button>
                 <button
                   onClick={async () => {
+                    mic.stop();
                     setProcessing(true);
                     try {
                       await fetch("/api/notifications", {
@@ -247,20 +227,22 @@ export function HeartbeatPromptOverlay({ prompt, onDismiss, onComplete }: Heartb
               </div>
             ) : (
               <div className="flex flex-col items-center gap-6">
-                <button
-                  onClick={isRecording ? undefined : handleStartListening}
-                  className={`w-28 h-28 rounded-full flex items-center justify-center text-white transition-all shadow-xl ${
-                    isRecording 
-                      ? "bg-red-500 animate-pulse shadow-red-500/40 cursor-default" 
-                      : "bg-gradient-to-br from-[var(--primary)] to-emerald-600 hover:scale-105 active:scale-95 shadow-[var(--primary)]/40 cursor-pointer"
-                  }`}
-                  aria-label={isRecording ? "Listening" : "Press to speak"}
-                >
-                  <Mic size={48} className="text-white" />
-                </button>
+                {!micStarted && (
+                  <button
+                    onClick={handleStartListening}
+                    disabled={mic.loading}
+                    className="w-28 h-28 rounded-full flex items-center justify-center text-white transition-all shadow-xl bg-gradient-to-br from-[var(--primary)] to-emerald-600 hover:scale-105 active:scale-95 shadow-[var(--primary)]/40 cursor-pointer disabled:opacity-50"
+                    aria-label="Press to speak"
+                  >
+                    <Mic size={48} className="text-white" />
+                  </button>
+                )}
                 
                 <button
-                  onClick={onDismiss}
+                  onClick={() => {
+                    mic.stop();
+                    onDismiss();
+                  }}
                   className="px-6 py-2 text-[var(--foreground)] opacity-50 hover:opacity-100 font-medium text-lg transition-opacity"
                 >
                   Skip

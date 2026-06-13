@@ -187,10 +187,10 @@ export default function CaregiverDashboard() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'urgent': return 'text-red-500 bg-red-500/10 border-red-500/50';
-      case 'high': return 'text-orange-500 bg-orange-500/10 border-orange-500/50';
-      case 'normal': return 'text-blue-500 bg-blue-500/10 border-blue-500/50';
-      default: return 'text-gray-500 bg-gray-500/10 border-gray-500/50';
+      case 'urgent': return 'text-red-500 bg-red-500/10';
+      case 'high': return 'text-orange-500 bg-orange-500/10';
+      case 'normal': return 'text-blue-500 bg-blue-500/10';
+      default: return 'text-[var(--foreground)] bg-black/5 dark:bg-white/5';
     }
   };
 
@@ -210,30 +210,30 @@ export default function CaregiverDashboard() {
     return (
       <main className="min-h-screen min-h-[100dvh] bg-[var(--background)] flex items-center justify-center p-4">
         <div className="text-center">
-          <Bell size={40} className="text-[var(--primary)] animate-pulse mx-auto mb-3 sm:w-12 sm:h-12" />
-          <p className="text-lg sm:text-xl text-[var(--foreground)] opacity-70">Loading notifications...</p>
+          <Bell size={40} className="text-[var(--foreground)] animate-pulse mx-auto mb-4 opacity-50" />
+          <p className="text-base text-[var(--foreground)] opacity-60">Loading notifications...</p>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen min-h-[100dvh] bg-[var(--background)] pb-20 sm:pb-24">
+    <main className="min-h-screen min-h-[100dvh] bg-[var(--background)] pb-20 sm:pb-24 font-sans">
       {/* Header - mobile optimized */}
-      <div className="pt-6 sm:pt-12 pb-4 sm:pb-8 px-4 sm:px-6 bg-gradient-to-b from-[var(--surface)] to-transparent safe-top">
-        <div className="flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0 max-w-6xl mx-auto w-full">
+      <div className="pt-8 sm:pt-16 pb-6 sm:pb-10 px-4 sm:px-6 safe-top">
+        <div className="flex flex-col sm:flex-row justify-between items-start gap-6 sm:gap-0 max-w-5xl mx-auto w-full">
           <div>
-            <h1 className="text-3xl sm:text-4xl font-bold text-[var(--foreground)] mb-1.5 sm:mb-2">
+            <h1 className="text-3xl sm:text-4xl font-semibold text-[var(--foreground)] tracking-tight mb-2">
               Caregiver Dashboard
             </h1>
-            <p className="text-lg sm:text-xl text-[var(--foreground)] opacity-60">
+            <p className="text-base sm:text-lg text-[var(--foreground)] opacity-50 font-medium">
               {pendingNotifications.length} pending notification{pendingNotifications.length !== 1 ? 's' : ''}
             </p>
           </div>
-          <div className="flex gap-2 sm:gap-3">
+          <div className="flex gap-3">
             <Link 
               href="/"
-              className="px-4 sm:px-6 py-2.5 sm:py-3 bg-[var(--surface)] rounded-full text-[var(--foreground)] hover:bg-white/10 active:scale-95 transition-all shadow-sm border border-[var(--border)] text-sm sm:text-base touch-manipulation"
+              className="px-5 py-2.5 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-lg text-[var(--foreground)] active:scale-95 transition-all text-sm font-medium touch-manipulation"
             >
               Patient View
             </Link>
@@ -242,24 +242,24 @@ export default function CaregiverDashboard() {
         </div>
         
         {/* Tab Navigation */}
-        <div className="flex gap-2 sm:gap-3 mt-6 max-w-6xl mx-auto overflow-x-auto">
+        <div className="flex gap-2 sm:gap-3 mt-10 max-w-5xl mx-auto overflow-x-auto no-scrollbar">
           <button
             onClick={() => setActiveTab('notifications')}
-            className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-bold text-sm sm:text-base transition-all whitespace-nowrap ${
+            className={`px-5 py-2.5 rounded-lg font-medium text-sm transition-all whitespace-nowrap flex items-center ${
               activeTab === 'notifications'
-                ? 'bg-[var(--primary)] text-white'
-                : 'bg-[var(--surface)] text-[var(--foreground)] hover:bg-white/10'
+                ? 'bg-[var(--foreground)] text-[var(--background)]'
+                : 'text-[var(--foreground)] opacity-60 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
             }`}
           >
-            <Bell size={18} className="inline mr-2" />
+            <Bell size={16} className="mr-2" />
             Notifications
           </button>
           <button
             onClick={() => setActiveTab('therapy-words')}
-            className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-bold text-sm sm:text-base transition-all whitespace-nowrap ${
+            className={`px-5 py-2.5 rounded-lg font-medium text-sm transition-all whitespace-nowrap ${
               activeTab === 'therapy-words'
-                ? 'bg-[var(--primary)] text-white'
-                : 'bg-[var(--surface)] text-[var(--foreground)] hover:bg-white/10'
+                ? 'bg-[var(--foreground)] text-[var(--background)]'
+                : 'text-[var(--foreground)] opacity-60 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
             }`}
           >
             Therapy Words
@@ -268,37 +268,37 @@ export default function CaregiverDashboard() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6">
         {activeTab === 'notifications' && renderNotifications()}
         {activeTab === 'therapy-words' && renderTherapyWords()}
       </div>
 
       {/* Info Modal */}
       {modalInfo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 max-w-sm w-full shadow-2xl">
-            <div className="flex items-start mb-4">
-              <div className={`p-3 rounded-full mr-4 ${modalInfo.isError ? 'bg-red-500/20 text-red-500' : 'bg-green-500/20 text-green-500'}`}>
-                {modalInfo.isError ? <AlertCircle size={24} /> : <CheckCircle2 size={24} />}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 dark:bg-black/40 backdrop-blur-md">
+          <div className="bg-[var(--surface)] rounded-lg p-6 max-w-sm w-full shadow-2xl">
+            <div className="flex items-start mb-5">
+              <div className={`p-2.5 rounded-lg mr-4 ${modalInfo.isError ? 'bg-red-500/10 text-red-500' : 'bg-green-500/10 text-green-500'}`}>
+                {modalInfo.isError ? <AlertCircle size={20} /> : <CheckCircle2 size={20} />}
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-bold text-[var(--foreground)] mb-1">
+                <h3 className="text-base font-semibold text-[var(--foreground)] mb-1">
                   {modalInfo.isError ? 'Error' : 'Success'}
                 </h3>
-                <p className="text-[var(--foreground)] opacity-80 text-sm">
+                <p className="text-[var(--foreground)] opacity-60 text-sm">
                   {modalInfo.message}
                 </p>
               </div>
               <button 
                 onClick={() => setModalInfo(null)}
-                className="text-[var(--foreground)] opacity-50 hover:opacity-100 transition-opacity ml-2"
+                className="text-[var(--foreground)] opacity-40 hover:opacity-100 transition-opacity ml-2"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
             <button
               onClick={() => setModalInfo(null)}
-              className="w-full py-3 bg-[var(--primary)] text-white rounded-xl font-bold transition-all hover:opacity-90"
+              className="w-full py-2.5 bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-[var(--foreground)] rounded-lg font-medium transition-all"
             >
               Close
             </button>
@@ -310,101 +310,98 @@ export default function CaregiverDashboard() {
   
   function renderNotifications() {
     return (
-      <div className="space-y-6 sm:space-y-8">
+      <div className="space-y-10 sm:space-y-16 pb-12">
         
         {/* Pending Notifications */}
         <section>
-          <div className="flex items-center gap-2.5 sm:gap-3 mb-3 sm:mb-4">
-            <Bell size={22} className="text-[var(--primary)] sm:w-6 sm:h-6" />
-            <h2 className="text-xl sm:text-2xl font-bold text-[var(--foreground)]">
+          <div className="flex items-center gap-3 mb-6">
+            <h2 className="text-lg sm:text-xl font-semibold text-[var(--foreground)] tracking-tight">
               Pending Requests
             </h2>
-            <span className="px-2.5 sm:px-3 py-0.5 sm:py-1 bg-[var(--primary)]/20 text-[var(--primary)] rounded-full text-xs sm:text-sm font-bold">
+            <span className="px-2 py-0.5 bg-black/5 dark:bg-white/10 text-[var(--foreground)] rounded-md text-xs font-medium">
               {pendingNotifications.length}
             </span>
           </div>
 
           {pendingNotifications.length === 0 ? (
-            <div className="bg-[var(--surface)] rounded-2xl sm:rounded-3xl p-6 sm:p-8 text-center border border-[var(--border)]/50">
-              <CheckCircle2 size={40} className="text-green-500 mx-auto mb-3 sm:w-12 sm:h-12 opacity-50" />
-              <p className="text-[var(--foreground)] opacity-60 text-base sm:text-lg">
+            <div className="bg-[var(--surface)] rounded-lg p-10 text-center">
+              <CheckCircle2 size={32} className="text-[var(--foreground)] opacity-20 mx-auto mb-4" />
+              <p className="text-[var(--foreground)] opacity-50 text-sm font-medium">
                 All caught up! No pending notifications.
               </p>
             </div>
           ) : (
-            <div className="space-y-3 sm:space-y-4">
+            <div className="space-y-4">
               {pendingNotifications.map((notification) => (
                 <div
                   key={notification.notification_id}
-                  className={`bg-[var(--surface)] rounded-2xl sm:rounded-3xl p-4 sm:p-6 border-2 ${getPriorityColor(notification.priority)} shadow-lg active:shadow-md transition-all`}
+                  className="bg-[var(--surface)] rounded-lg p-5 sm:p-6 shadow-sm flex flex-col sm:flex-row items-start justify-between gap-6"
                 >
-                  <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
-                    <div className="flex items-start gap-3 sm:gap-4 flex-1 w-full">
-                      <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0 ${getPriorityColor(notification.priority)}`}>
-                        {getNotificationIcon(notification.notification_type)}
+                  <div className="flex items-start gap-5 flex-1 w-full">
+                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${getPriorityColor(notification.priority)}`}>
+                      {getNotificationIcon(notification.notification_type)}
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="text-base font-semibold text-[var(--foreground)] break-words">
+                          {notification.title}
+                        </h3>
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${getPriorityColor(notification.priority)}`}>
+                          {notification.priority}
+                        </span>
                       </div>
                       
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
-                          <h3 className="text-lg sm:text-xl font-bold text-[var(--foreground)] break-words">
-                            {notification.title}
-                          </h3>
-                          <span className={`px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs font-bold uppercase ${getPriorityColor(notification.priority)} self-start`}>
-                            {notification.priority}
-                          </span>
-                        </div>
-                        
-                        <p className="text-[var(--foreground)] opacity-80 mb-2 sm:mb-3 text-sm sm:text-base break-words">
-                          {notification.message}
-                        </p>
-                        
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4 text-xs sm:text-sm text-[var(--foreground)] opacity-60">
-                          <span className="font-semibold">
-                            From: {notification.patient?.name || "Patient"}
-                          </span>
-                          <span className="hidden sm:inline">•</span>
-                          <span className="text-xs">{new Date(notification.created_at).toLocaleString()}</span>
-                        </div>
-
-                        {/* Restaurant info if available */}
-                        {notification.metadata?.restaurant_name && (
-                          <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-white/5 rounded-xl sm:rounded-2xl">
-                            <p className="font-semibold text-[var(--foreground)] mb-1 text-sm sm:text-base break-words">
-                              Restaurant: {notification.metadata.restaurant_name as string}
-                            </p>
-                            {notification.metadata?.order_details && (
-                              <p className="text-xs sm:text-sm text-[var(--foreground)] opacity-60">
-                                Rating: ⭐ {(notification.metadata.order_details as Record<string, unknown>).rating}
-                              </p>
-                            )}
-                          </div>
-                        )}
+                      <p className="text-[var(--foreground)] opacity-70 mb-4 text-sm break-words leading-relaxed">
+                        {notification.message}
+                      </p>
+                      
+                      <div className="flex items-center gap-3 text-xs text-[var(--foreground)] opacity-40 font-medium">
+                        <span>
+                          From: {notification.patient?.name || "Patient"}
+                        </span>
+                        <span>•</span>
+                        <span>{new Date(notification.created_at).toLocaleString([], {hour: '2-digit', minute:'2-digit', month: 'short', day: 'numeric'})}</span>
                       </div>
-                    </div>
 
-                    <div className="flex sm:flex-col gap-2 w-full sm:w-auto">
-                      <button
-                        onClick={() => updateNotificationStatus(notification.notification_id, 'acknowledged')}
-                        disabled={updating === notification.notification_id}
-                        className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-500 hover:bg-blue-600 active:bg-blue-600 text-white rounded-xl font-bold text-sm sm:text-base transition-colors disabled:opacity-50 whitespace-nowrap touch-manipulation active:scale-[0.98]"
-                      >
-                        {updating === notification.notification_id ? "..." : "Acknowledge"}
-                      </button>
-                      <button
-                        onClick={() => updateNotificationStatus(notification.notification_id, 'completed')}
-                        disabled={updating === notification.notification_id}
-                        className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-green-500 hover:bg-green-600 active:bg-green-600 text-white rounded-xl font-bold text-sm sm:text-base transition-colors disabled:opacity-50 whitespace-nowrap touch-manipulation active:scale-[0.98]"
-                      >
-                        {updating === notification.notification_id ? "..." : "Complete"}
-                      </button>
-                      <button
-                        onClick={() => updateNotificationStatus(notification.notification_id, 'dismissed')}
-                        disabled={updating === notification.notification_id}
-                        className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-gray-500 hover:bg-gray-600 active:bg-gray-600 text-white rounded-xl font-bold text-sm sm:text-base transition-colors disabled:opacity-50 whitespace-nowrap touch-manipulation active:scale-[0.98]"
-                      >
-                        Dismiss
-                      </button>
+                      {/* Restaurant info if available */}
+                      {notification.metadata?.restaurant_name && (
+                        <div className="mt-5 p-4 bg-black/5 dark:bg-white/5 rounded-lg border-l-2 border-blue-500">
+                          <p className="font-medium text-[var(--foreground)] mb-1 text-sm break-words">
+                            Restaurant: {notification.metadata.restaurant_name as string}
+                          </p>
+                          {notification.metadata?.order_details && (
+                            <p className="text-xs text-[var(--foreground)] opacity-60">
+                              Rating: ⭐ {(notification.metadata.order_details as Record<string, unknown>).rating}
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                    <button
+                      onClick={() => updateNotificationStatus(notification.notification_id, 'acknowledged')}
+                      disabled={updating === notification.notification_id}
+                      className="px-5 py-2.5 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 active:scale-95 text-[var(--foreground)] rounded-lg font-medium text-sm transition-all disabled:opacity-50 whitespace-nowrap"
+                    >
+                      {updating === notification.notification_id ? "..." : "Acknowledge"}
+                    </button>
+                    <button
+                      onClick={() => updateNotificationStatus(notification.notification_id, 'completed')}
+                      disabled={updating === notification.notification_id}
+                      className="px-5 py-2.5 bg-[var(--foreground)] hover:opacity-90 active:scale-95 text-[var(--background)] rounded-lg font-medium text-sm transition-all disabled:opacity-50 whitespace-nowrap"
+                    >
+                      {updating === notification.notification_id ? "..." : "Complete"}
+                    </button>
+                    <button
+                      onClick={() => updateNotificationStatus(notification.notification_id, 'dismissed')}
+                      disabled={updating === notification.notification_id}
+                      className="px-5 py-2.5 bg-transparent hover:bg-black/5 dark:hover:bg-white/5 text-[var(--foreground)] opacity-50 hover:opacity-100 rounded-lg font-medium text-sm transition-all disabled:opacity-50 whitespace-nowrap"
+                    >
+                      Dismiss
+                    </button>
                   </div>
                 </div>
               ))}
@@ -415,34 +412,33 @@ export default function CaregiverDashboard() {
         {/* Acknowledged Notifications */}
         {acknowledgedNotifications.length > 0 && (
           <section>
-            <div className="flex items-center gap-2.5 sm:gap-3 mb-3 sm:mb-4">
-              <Clock size={22} className="text-yellow-500 sm:w-6 sm:h-6" />
-              <h2 className="text-xl sm:text-2xl font-bold text-[var(--foreground)]">
+            <div className="flex items-center gap-3 mb-6">
+              <h2 className="text-lg sm:text-xl font-semibold text-[var(--foreground)] tracking-tight">
                 In Progress
               </h2>
-              <span className="px-2.5 sm:px-3 py-0.5 sm:py-1 bg-yellow-500/20 text-yellow-500 rounded-full text-xs sm:text-sm font-bold">
+              <span className="px-2 py-0.5 bg-black/5 dark:bg-white/10 text-[var(--foreground)] rounded-md text-xs font-medium">
                 {acknowledgedNotifications.length}
               </span>
             </div>
 
-            <div className="space-y-2.5 sm:space-y-3">
+            <div className="space-y-3">
               {acknowledgedNotifications.map((notification) => (
                 <div
                   key={notification.notification_id}
-                  className="bg-[var(--surface)] rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-yellow-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4"
+                  className="bg-[var(--surface)] rounded-lg p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 shadow-sm"
                 >
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-[var(--foreground)] mb-1 text-base sm:text-lg break-words">
+                    <h3 className="font-medium text-[var(--foreground)] mb-1.5 text-sm sm:text-base break-words">
                       {notification.title}
                     </h3>
-                    <p className="text-xs sm:text-sm text-[var(--foreground)] opacity-60">
+                    <p className="text-xs text-[var(--foreground)] opacity-50 font-medium">
                       From: {notification.patient?.name || "Patient"}
                     </p>
                   </div>
                   <button
                     onClick={() => updateNotificationStatus(notification.notification_id, 'completed')}
                     disabled={updating === notification.notification_id}
-                    className="w-full sm:w-auto px-4 sm:px-5 py-2 sm:py-2 bg-green-500 hover:bg-green-600 active:bg-green-600 text-white rounded-xl font-bold text-sm transition-colors disabled:opacity-50 touch-manipulation active:scale-[0.98]"
+                    className="w-full sm:w-auto px-5 py-2 bg-[var(--foreground)] hover:opacity-90 active:scale-95 text-[var(--background)] rounded-lg font-medium text-sm transition-all disabled:opacity-50"
                   >
                     Mark Complete
                   </button>
@@ -455,9 +451,8 @@ export default function CaregiverDashboard() {
         {/* Completed Notifications */}
         {completedNotifications.length > 0 && (
           <section>
-            <div className="flex items-center gap-2.5 sm:gap-3 mb-3 sm:mb-4">
-              <CheckCircle2 size={22} className="text-green-500 sm:w-6 sm:h-6" />
-              <h2 className="text-xl sm:text-2xl font-bold text-[var(--foreground)]">
+            <div className="flex items-center gap-3 mb-6">
+              <h2 className="text-lg sm:text-xl font-semibold text-[var(--foreground)] tracking-tight">
                 Completed
               </h2>
             </div>
@@ -466,19 +461,17 @@ export default function CaregiverDashboard() {
               {completedNotifications.slice(0, 5).map((notification) => (
                 <div
                   key={notification.notification_id}
-                  className="bg-[var(--surface)] rounded-xl p-3.5 sm:p-4 border border-green-500/20 opacity-60"
+                  className="bg-transparent rounded-lg py-3 px-4 opacity-60 hover:opacity-100 transition-opacity flex items-center justify-between gap-4"
                 >
-                  <div className="flex items-start sm:items-center justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-[var(--foreground)] text-sm sm:text-base break-words">
-                        {notification.title}
-                      </h3>
-                      <p className="text-xs sm:text-sm text-[var(--foreground)] opacity-60 mt-0.5">
-                        Completed: {notification.completed_at ? new Date(notification.completed_at).toLocaleString() : 'N/A'}
-                      </p>
-                    </div>
-                    <CheckCircle2 size={18} className="text-green-500 flex-shrink-0 sm:w-5 sm:h-5" />
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium text-[var(--foreground)] text-sm break-words">
+                      {notification.title}
+                    </h3>
+                    <p className="text-xs text-[var(--foreground)] opacity-60 mt-1 font-medium">
+                      Completed: {notification.completed_at ? new Date(notification.completed_at).toLocaleString([], {hour: '2-digit', minute:'2-digit', month: 'short', day: 'numeric'}) : 'N/A'}
+                    </p>
                   </div>
+                  <CheckCircle2 size={16} className="text-[var(--foreground)] opacity-40 flex-shrink-0" />
                 </div>
               ))}
             </div>
@@ -490,73 +483,72 @@ export default function CaregiverDashboard() {
   
   function renderTherapyWords() {
     return (
-      <div className="space-y-6 sm:space-y-8 mt-6">
-        {/* Patient Selector */}
-        <section className="bg-[var(--surface)] rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-[var(--border)]/50">
-          <h2 className="text-xl sm:text-2xl font-bold text-[var(--foreground)] mb-4">
+      <div className="space-y-8 pb-12">
+        <section className="bg-[var(--surface)] shadow-sm rounded-lg p-6 sm:p-8">
+          <h2 className="text-lg sm:text-xl font-semibold text-[var(--foreground)] mb-6 tracking-tight">
             Manage Therapy Words
           </h2>
           
-          <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-[var(--foreground)] mb-2">
-                    Therapy Words (comma-separated)
-                  </label>
-                  <textarea
-                    value={therapyWords}
-                    onChange={(e) => setTherapyWords(e.target.value)}
-                    placeholder="Apple, Water, Hello, Yes, No, Please, Thank you"
-                    rows={4}
-                    className="w-full px-4 py-3 rounded-xl bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] focus:outline-none focus:border-[var(--primary)]"
-                  />
-                  <p className="text-xs text-[var(--foreground)] opacity-60 mt-2">
-                    Enter words separated by commas. These will be used for therapy prompts.
-                  </p>
-                </div>
-                
-                <button
-                  onClick={saveTherapyWords}
-                  disabled={!therapyWords.trim() || savingWords}
-                  className="w-full sm:w-auto px-6 py-3 bg-[var(--primary)] text-white rounded-xl font-bold transition-all disabled:opacity-50 hover:opacity-90"
-                >
-                  {savingWords ? "Saving..." : "Save Therapy Words"}
-                </button>
-                
-                {/* Current Word Lists */}
-                {currentWordLists.length > 0 && (
-                  <div className="mt-6">
-                    <h3 className="text-lg font-bold text-[var(--foreground)] mb-3">
-                      Current Word Lists
-                    </h3>
-                    <div className="space-y-3">
-                      {currentWordLists.map((list) => (
-                        <div
-                          key={list.id}
-                          className={`p-4 rounded-xl border ${
-                            list.is_active
-                              ? 'bg-green-500/10 border-green-500/50'
-                              : 'bg-[var(--background)] border-[var(--border)]'
-                          }`}
-                        >
-                          <div className="flex items-start justify-between mb-2">
-                            <span className="text-sm font-semibold text-[var(--foreground)]">
-                              {list.is_active && (
-                                <span className="text-green-500 mr-2">● Active</span>
-                              )}
-                              Created by {list.caregiver?.name}
-                            </span>
-                            <span className="text-xs text-[var(--foreground)] opacity-60">
-                              {new Date(list.created_at).toLocaleDateString()}
-                            </span>
-                          </div>
-                          <p className="text-sm text-[var(--foreground)]">
-                            {list.words.join(', ')}
-                          </p>
-                        </div>
-                      ))}
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-[var(--foreground)] opacity-70 mb-2">
+                Therapy Words (comma-separated)
+              </label>
+              <textarea
+                value={therapyWords}
+                onChange={(e) => setTherapyWords(e.target.value)}
+                placeholder="Apple, Water, Hello, Yes, No, Please, Thank you"
+                rows={4}
+                className="w-full px-4 py-3 rounded-lg bg-black/5 dark:bg-white/5 text-[var(--foreground)] placeholder:text-[var(--foreground)] placeholder:opacity-20 focus:outline-none focus:ring-1 focus:ring-[var(--foreground)] focus:ring-opacity-20 resize-none transition-all"
+              />
+              <p className="text-xs text-[var(--foreground)] opacity-40 mt-2 font-medium">
+                Enter words separated by commas. These will be used for therapy prompts.
+              </p>
+            </div>
+            
+            <button
+              onClick={saveTherapyWords}
+              disabled={!therapyWords.trim() || savingWords}
+              className="w-full sm:w-auto px-6 py-2.5 bg-[var(--foreground)] text-[var(--background)] rounded-lg font-medium transition-all disabled:opacity-50 hover:opacity-90 active:scale-95"
+            >
+              {savingWords ? "Saving..." : "Save Therapy Words"}
+            </button>
+            
+            {/* Current Word Lists */}
+            {currentWordLists.length > 0 && (
+              <div className="mt-10 pt-8 border-t border-black/5 dark:border-white/5">
+                <h3 className="text-sm font-medium text-[var(--foreground)] opacity-70 mb-4">
+                  Current Word Lists
+                </h3>
+                <div className="space-y-3">
+                  {currentWordLists.map((list) => (
+                    <div
+                      key={list.id}
+                      className={`p-4 sm:p-5 rounded-lg ${
+                        list.is_active
+                          ? 'bg-black/5 dark:bg-white/5'
+                          : 'bg-transparent opacity-50'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <span className="text-sm font-medium text-[var(--foreground)] flex items-center">
+                          {list.is_active && (
+                            <span className="w-2 h-2 rounded-full bg-green-500 mr-2"></span>
+                          )}
+                          Created by {list.caregiver?.name}
+                        </span>
+                        <span className="text-xs text-[var(--foreground)] opacity-40 font-medium">
+                          {new Date(list.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <p className="text-sm text-[var(--foreground)] opacity-80 leading-relaxed">
+                        {list.words.join(', ')}
+                      </p>
                     </div>
-                  </div>
-                )}
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </section>
       </div>

@@ -33,15 +33,21 @@ export function useHeartbeat({ enabled, intervalMinutes, onPrompt }: HeartbeatCo
     const loadTherapyWords = async () => {
       try {
         const res = await fetch('/api/therapy-words');
-        if (res.ok) {
-          const data = await res.json();
-          const activeList = data.wordLists?.find((list: any) => list.is_active);
-          if (activeList && activeList.words.length > 0) {
-            setTherapyWords(activeList.words);
-          }
+        if (!res.ok) {
+          console.warn(`[useHeartbeat] Therapy words API returned ${res.status}`);
+          return;
+        }
+        const data = await res.json();
+        console.log('[useHeartbeat] Therapy words API response:', JSON.stringify(data));
+        const activeList = data.wordLists?.find((list: any) => list.is_active);
+        if (activeList && activeList.words.length > 0) {
+          console.log('[useHeartbeat] Loaded therapy words from DB:', activeList.words);
+          setTherapyWords(activeList.words);
+        } else {
+          console.log('[useHeartbeat] No active word list found, using defaults');
         }
       } catch (error) {
-        console.log('Could not load therapy words, using defaults');
+        console.warn('[useHeartbeat] Could not load therapy words, using defaults:', error);
       }
     };
     
