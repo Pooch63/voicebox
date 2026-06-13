@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { useMicVAD } from '@ricky0123/vad-react';
 import { useAppStore } from '@/store/appStore';
 import { useDeepgram } from './useDeepgram';
@@ -28,16 +28,25 @@ export const useVAD = () => {
   const { connect, disconnect, sendAudioFrame, getFinalTranscript } = useDeepgram();
   const { generateResponses } = useResponseEngine();
 
-  const vad = useMicVAD({
+  const fnsRef = useRef({
+    sendAudioFrame, connect, disconnect, getFinalTranscript, generateResponses,
+    setAppState, setFinalTranscript, clearDisplayTranscript, addConversationTurn, setResponseOptions
+  });
+  fnsRef.current = {
+    sendAudioFrame, connect, disconnect, getFinalTranscript, generateResponses,
+    setAppState, setFinalTranscript, clearDisplayTranscript, addConversationTurn, setResponseOptions
+  };
+
+  const options = useMemo(() => ({
     startOnLoad: false,
     baseAssetPath: '/',
     onnxWASMBasePath: '/',
-    positiveSpeechThreshold: 0.85, // High threshold for home environments
+    positiveSpeechThreshold: 0.5, // Reduced for better sensitivity
     negativeSpeechThreshold: 0.4,
     preSpeechPadMs: 300,
     redemptionMs: 600,              // Don't snap shut mid-sentence
-    onFrameProcessed: (_probs, frame) => {
-      sendAudioFrame(frame);
+    onFrameProcessed: (_probs: any, frame: Float32Array) => {
+      fnsRef.current.sendAudioFrame(frame);
     },
     onSpeechStart: () => {
       if (shouldSuppressCaregiverVad()) {
@@ -45,35 +54,37 @@ export const useVAD = () => {
         return;
       }
       console.log('[VoiceBox] Speech started');
-      clearDisplayTranscript();
-      setResponseOptions([]);
-      setAppState('listening');
-      connect();
+      fnsRef.current.clearDisplayTranscript();
+      fnsRef.current.setResponseOptions([]);
+      fnsRef.current.setAppState('listening');
+      fnsRef.current.connect();
     },
-    onSpeechEnd: async (audio) => {
+    onSpeechEnd: async (audio: Float32Array) => {
       const durationSec = (audio.length / 16000).toFixed(2);
       console.log(`[VoiceBox] Speech ended (${audio.length} samples, ~${durationSec}s)`);
-      disconnect();
-      setAppState('processing');
+      fnsRef.current.disconnect();
+      fnsRef.current.setAppState('processing');
 
-      const finalTranscript = await getFinalTranscript(audio, 16000);
+      const finalTranscript = await fnsRef.current.getFinalTranscript(audio, 16000);
       console.log('[VoiceBox] Final transcript:', finalTranscript || '(empty)');
 
       if (finalTranscript) {
-        setFinalTranscript(finalTranscript);
-        addConversationTurn('caregiver', finalTranscript);
-        await generateResponses();
+        fnsRef.current.setFinalTranscript(finalTranscript);
+        fnsRef.current.addConversationTurn('caregiver', finalTranscript);
+        await fnsRef.current.generateResponses();
       } else {
-        setAppState('idle');
+        fnsRef.current.setAppState('idle');
       }
     },
     onVADMisfire: () => {
       console.log('[VoiceBox] VAD misfire — speech too short, discarding');
-      disconnect();
-      clearDisplayTranscript();
-      setAppState('idle');
+      fnsRef.current.disconnect();
+      fnsRef.current.clearDisplayTranscript();
+      fnsRef.current.setAppState('idle');
     },
-  });
+  }), []);
+
+  const vad = useMicVAD(options);
 
   const { pause: pauseVad, start: startVad, loading: vadLoading, errored: vadErrored } = vad;
 
