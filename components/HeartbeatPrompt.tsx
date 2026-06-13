@@ -178,20 +178,14 @@ export function HeartbeatPromptOverlay({ prompt, onDismiss, onComplete }: Heartb
               Tap the microphone and say the word clearly
             </p>
           )}
-          
-          {prompt.type === "hunger_check" && (
-            <p className="text-lg text-[var(--foreground)] opacity-60">
-              Tap the microphone to answer
-            </p>
-          )}
         </div>
 
         {/* Listening Indicator */}
         {isRecording && (
           <div className="mb-6">
-            <ListeningIndicator isListening={true} />
+            <ListeningIndicator isActive={true} />
             <p className="text-center text-[var(--foreground)] opacity-70 mt-4">
-              Listening... Tap stop when done
+              Listening
             </p>
           </div>
         )}
