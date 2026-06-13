@@ -1,14 +1,21 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase, type User } from '@/lib/db';
+import { type User } from '@/lib/db';
 import { useRouter } from 'next/navigation';
+import { createBrowserClient } from '@supabase/ssr';
+import Link from 'next/link';
 
 export default function UserMenu() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
-  const [authUser, setAuthUser] = useState<{ email?: string } | null>(null);
+  const [authUser, setAuthUser] = useState<{ email?: string, id?: string } | null>(null);
   const [showMenu, setShowMenu] = useState(false);
+
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
   useEffect(() => {
     const getUser = async () => {
@@ -43,7 +50,7 @@ export default function UserMenu() {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [supabase]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -53,18 +60,18 @@ export default function UserMenu() {
   if (!authUser) {
     return (
       <div className="flex gap-2">
-        <button
-          onClick={() => router.push('/auth/login')}
+        <Link
+          href="/auth/login"
           className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
         >
           Sign In
-        </button>
-        <button
-          onClick={() => router.push('/auth/signup')}
+        </Link>
+        <Link
+          href="/auth/signup"
           className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
         >
           Sign Up
-        </button>
+        </Link>
       </div>
     );
   }
